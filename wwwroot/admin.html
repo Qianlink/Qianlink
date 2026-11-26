@@ -5,44 +5,47 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>QianLink Admin Panel</title>
 <style>
-  body { margin:0; font-family:system-ui,-apple-system,sans-serif; background:#0b0e14; color:#f3f4f6; padding:16px; }
-  .wrap { max-width:540px; margin:0 auto; }
-  .card { background:#131720; border:1px solid #1f2937; border-radius:16px; padding:16px; margin-bottom:16px; }
-  input, textarea { width:100%; box-sizing:border-box; padding:10px; border-radius:10px; border:1px solid #374151; background:#0b0e14; color:#fff; margin-top:4px; margin-bottom:10px; }
-  .btn { width:100%; padding:12px; border:none; border-radius:10px; background:#10b981; color:#000; font-weight:800; cursor:pointer; }
-  .btn-blue { background:#2563eb; color:#fff; }
-  .grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
-  .ord { background:#0b0e14; border:1px solid #1f2937; padding:12px; border-radius:10px; margin-bottom:10px; font-size:13px; }
+  * { box-sizing: border-box; font-family: 'Segoe UI', system-ui, sans-serif; }
+  body { margin: 0; background: #090d16; color: #f1f5f9; padding: 16px; }
+  .wrap { max-width: 560px; margin: 0 auto; padding-bottom: 40px; }
+  .card { background: #111827; border: 1px solid #1e293b; border-radius: 16px; padding: 16px; margin-bottom: 16px; }
+  h3 { margin-top: 0; color: #34d399; font-size: 16px; }
+  label { display: block; font-size: 12px; color: #94a3b8; margin-bottom: 4px; }
+  input, textarea { width: 100%; padding: 10px; border-radius: 10px; border: 1px solid #334155; background: #090d16; color: #fff; margin-bottom: 10px; }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .btn { width: 100%; padding: 12px; border: none; border-radius: 10px; background: #10b981; color: #02140d; font-weight: 800; cursor: pointer; }
+  .btn-blue { background: #2563eb; color: #fff; }
+  .btn-amber { background: #f59e0b; color: #000; }
+  .ord { background: #090d16; border: 1px solid #1e293b; padding: 12px; border-radius: 12px; margin-bottom: 10px; font-size: 13px; line-height: 1.5; }
+  .rec-link { display: inline-block; background: #1e293b; color: #38bdf8; padding: 5px 10px; border-radius: 6px; text-decoration: none; font-weight: 700; margin-top: 6px; margin-right: 6px; }
 </style>
 </head>
 <body>
-<script>
-if (sessionStorage.getItem('ql_auth') !== '1') {
-  const p = prompt('🔒 Enter Admin Password:');
-  if (p === 'SAMAR@0219') sessionStorage.setItem('ql_auth', '1');
-  else { document.body.innerHTML = '<h2 style="text-align:center;margin-top:60px;color:#ef4444;">❌ Access Denied</h2>'; throw new Error('Denied'); }
-}
-</script>
 <div class="wrap">
-  <h2 style="color:#10b981;">⚙️ QianLink Admin Control</h2>
+  <h2 style="color:#10b981;margin-bottom:4px;">⚙️ QianLink Admin Control</h2>
+  <p style="font-size:12px;color:#64748b;margin-top:0;">Records automatically auto-delete after 3 days (72 hours).</p>
 
   <div class="card">
-    <h3 style="margin-top:0;">1. Live INR Rates</h3>
+    <h3>1. Live INR Rates & Minimum USDT Limits</h3>
     <div class="grid">
-      <div><label>🎮 Gaming</label><input type="number" step="0.01" id="r_gaming" /></div>
-      <div><label>📈 Stock</label><input type="number" step="0.01" id="r_stock" /></div>
-      <div><label>🔄 Mix</label><input type="number" step="0.01" id="r_mix" /></div>
-      <div><label>💎 Pure</label><input type="number" step="0.01" id="r_pure" /></div>
+      <div><label>🎮 Gaming Rate (₹)</label><input type="number" step="0.01" id="r_gaming" /></div>
+      <div><label>🎮 Gaming Min USDT</label><input type="number" id="m_gaming" /></div>
+      <div><label>📈 Stock Rate (₹)</label><input type="number" step="0.01" id="r_stock" /></div>
+      <div><label>📈 Stock Min USDT</label><input type="number" id="m_stock" /></div>
+      <div><label>🔄 Mix Rate (₹)</label><input type="number" step="0.01" id="r_mix" /></div>
+      <div><label>🔄 Mix Min USDT</label><input type="number" id="m_mix" /></div>
+      <div><label>💎 Pure Rate (₹)</label><input type="number" step="0.01" id="r_pure" /></div>
+      <div><label>💎 Pure Min USDT</label><input type="number" id="m_pure" /></div>
     </div>
-    <button class="btn" onclick="saveRates()">💾 Save Live Rates</button>
+    <button class="btn" onclick="saveRates()">💾 Save Rates & Minimum Limits</button>
   </div>
 
   <div class="card">
-    <h3 style="margin-top:0;">2. Wallet & Promo Settings</h3>
+    <h3>2. Wallet & Promo Settings</h3>
     <label>TRC-20 Wallet Address</label>
     <input type="text" id="s_wallet" />
     <label>Promo Message Text</label>
-    <textarea rows="3" id="s_promo"></textarea>
+    <textarea rows="2" id="s_promo"></textarea>
     <label>USDT Work / Exchange Link (Button 1)</label>
     <input type="text" id="s_ex" />
     <label>Any Enquiry / Support Link (Button 2)</label>
@@ -51,61 +54,110 @@ if (sessionStorage.getItem('ql_auth') !== '1') {
   </div>
 
   <div class="card">
-    <h3 style="margin-top:0;">3. Upload TRC-20 QR Code</h3>
+    <h3>3. Upload TRC-20 QR Code</h3>
     <input type="file" id="qrFile" accept="image/*" />
     <button class="btn" onclick="uploadQr()">📤 Upload QR Image</button>
   </div>
 
   <div class="card">
-    <h3 style="margin-top:0;">4. Client Orders</h3>
+    <h3>4. Change Admin Password</h3>
+    <input type="password" id="newPass" placeholder="Enter New Admin Password" />
+    <button class="btn btn-amber" onclick="changePass()">🔑 Update Admin Password</button>
+  </div>
+
+  <div class="card">
+    <h3>5. Active Orders (Last 3 Days Only)</h3>
     <div id="orderList">Loading...</div>
   </div>
 </div>
 
 <script>
-async function load() {
-  const res = await fetch('/api/state');
+let adminPwd = sessionStorage.getItem('ql_pwd') || '';
+
+async function authAndLoad() {
+  if (!adminPwd) adminPwd = prompt('🔒 Enter Admin Password:') || '';
+  const res = await fetch('/api/admin/state', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ password: adminPwd })
+  });
+  if (!res.ok) {
+    sessionStorage.removeItem('ql_pwd');
+    document.body.innerHTML = '<h2 style="text-align:center;margin-top:60px;color:#ef4444;">❌ Wrong Password! Refresh to try again.</h2>';
+    return;
+  }
+  sessionStorage.setItem('ql_pwd', adminPwd);
   const d = await res.json();
-  ['gaming','stock','mix','pure'].forEach(k => document.getElementById('r_'+k).value = d.rates[k]);
+  ['gaming','stock','mix','pure'].forEach(k => {
+    document.getElementById('r_'+k).value = d.rates[k];
+    document.getElementById('m_'+k).value = d.minLimits[k];
+  });
   document.getElementById('s_wallet').value = d.settings.wallet;
   document.getElementById('s_promo').value = d.settings.promoText;
   document.getElementById('s_ex').value = d.settings.exchangeLink;
   document.getElementById('s_enq').value = d.settings.enquiryLink;
+
   document.getElementById('orderList').innerHTML = d.orders.length ? d.orders.map(o => `
     <div class="ord">
-      <strong>#${o.id} — ${o.fund} (${o.usdt} USDT → ₹${o.inr})</strong> [${o.status}]<br/>
-      Bank/UPI: ${o.bank}<br/>TxID: ${o.txId}<br/>Time: ${o.time}<br/>
-      <button onclick="setSt('${o.id}','Paid')" style="margin-top:6px;background:#10b981;border:none;padding:5px 10px;border-radius:6px;cursor:pointer;">✅ Mark Paid</button>
-    </div>`).join('') : 'No orders yet.';
+      <strong style="color:#fbbf24;">${o.token}</strong> — <b>${o.fund}</b> (${o.usdt} USDT → <span style="color:#34d399;">₹${o.inr}</span>) [<b>${o.status}</b>]<br/>
+      🏦 <b>${o.holder}</b> | A/C: ${o.accNo} | IFSC: ${o.ifsc}<br/>
+      🕒 ${o.timeIst}<br/>
+      <a href="${o.receiptUrl}" target="_blank" class="rec-link">🖼️ View Receipt</a>
+      <button onclick="setSt('${o.token}','Paid')" style="background:#10b981;border:none;padding:6px 10px;border-radius:6px;font-weight:700;cursor:pointer;">✅ Mark Paid</button>
+    </div>
+  `).join('') : 'No orders in the last 3 days.';
 }
+
 async function saveRates() {
-  const body = {};
-  ['gaming','stock','mix','pure'].forEach(k => body[k] = parseFloat(document.getElementById('r_'+k).value));
-  await fetch('/api/rates', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body) });
-  alert('✅ Rates Updated!');
+  const rates = {}, minLimits = {};
+  ['gaming','stock','mix','pure'].forEach(k => {
+    rates[k] = parseFloat(document.getElementById('r_'+k).value);
+    minLimits[k] = parseFloat(document.getElementById('m_'+k).value);
+  });
+  await fetch('/api/rates', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ password: adminPwd, rates, minLimits }) });
+  alert('✅ Rates & Minimum USDT Limits Saved!');
 }
+
 async function saveSettings() {
-  const body = {
+  const settings = {
     wallet: document.getElementById('s_wallet').value.trim(),
     promoText: document.getElementById('s_promo').value.trim(),
     exchangeLink: document.getElementById('s_ex').value.trim(),
     enquiryLink: document.getElementById('s_enq').value.trim()
   };
-  await fetch('/api/settings', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body) });
+  await fetch('/api/settings', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ password: adminPwd, settings }) });
   alert('✅ Settings Saved!');
 }
+
 async function uploadQr() {
   const f = document.getElementById('qrFile').files[0];
-  if (!f) return alert('Select an image first');
-  const fd = new FormData(); fd.append('qr', f);
-  await fetch('/api/upload-qr', { method:'POST', body:fd });
+  if (!f) return alert('Select QR image first!');
+  const fd = new FormData();
+  fd.append('password', adminPwd);
+  fd.append('qr', f);
+  await fetch('/api/upload-qr', { method: 'POST', body: fd });
   alert('✅ QR Uploaded!');
 }
-async function setSt(id, status) {
-  await fetch('/api/order-status', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({id, status}) });
-  load();
+
+async function changePass() {
+  const np = document.getElementById('newPass').value.trim();
+  if (np.length < 4) return alert('Enter at least 4 characters!');
+  const r = await fetch('/api/admin/password', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ oldPassword: adminPwd, newPassword: np })
+  });
+  if (r.ok) {
+    adminPwd = np;
+    sessionStorage.setItem('ql_pwd', np);
+    document.getElementById('newPass').value = '';
+    alert('✅ Admin Password Updated Successfully!');
+  }
 }
-load();
+
+async function setSt(token, status) {
+  await fetch('/api/order-status', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ password: adminPwd, token, status }) });
+  authAndLoad();
+}
+authAndLoad();
 </script>
 </body>
 </html>
