@@ -104,7 +104,7 @@ public record StatusReq(string Password, string Token, string Status);
 
 public class AppSettings
 {
-    public string Wallet { get; set; } = "TYourTrc20WalletAddressHere123456789";
+    public string Wallet { get; set; } = "TBMdnk1sTcAxSjb9b129cvkRs6eb9TQzgt";
     public string PromoText { get; set; } = "🚀 Best Live USDT ⇄ INR Exchange Rates! Instant INR Payout & 24/7 Desk Support.";
     public string ExchangeLink { get; set; } = "https://t.me";
     public string EnquiryLink { get; set; } = "https://t.me";
@@ -251,24 +251,19 @@ public class DeskStore
                 new KeyValuePair<string, string>("text", msg),
                 new KeyValuePair<string, string>("parse_mode", "HTML")
             });
-            var txtResp = await c.PostAsync($"https://telegram.org{BotToken}/sendMessage", txtForm);
-            Console.WriteLine($"TG MSG: {txtResp.StatusCode} - {await txtResp.Content.ReadAsStringAsync()}");
+            await c.PostAsync($"https://telegram.org{BotToken}/sendMessage", txtForm);
 
             using var mp = new MultipartFormDataContent();
             mp.Add(new StringContent(AdminChatId), "chat_id");
-            mp.Add(new StringContent($"🧾 Receipt for Order {o.Token}"), "caption");
+            mp.Add(new StringContent($"🧾 Payment Receipt ({o.Token})"), "caption");
             var fileBytes = await File.ReadAllBytesAsync(filePath);
             var fileContent = new ByteArrayContent(fileBytes);
             fileContent.Headers.ContentType = MediaTypeHeaderValue.Parse("application/octet-stream");
             mp.Add(fileContent, "document", Path.GetFileName(filePath));
 
-            var docResp = await c.PostAsync($"https://telegram.org{BotToken}/sendDocument", mp);
-            Console.WriteLine($"TG FILE: {docResp.StatusCode}");
+            await c.PostAsync($"https://telegram.org{BotToken}/sendDocument", mp);
         }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"TG ERR: {ex.Message}");
-        }
+        catch { }
     }
 }
 
