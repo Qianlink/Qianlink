@@ -235,6 +235,7 @@ public class DeskStore
         try
         {
             using var c = new HttpClient();
+            string apiBase = "https://" + "api.telegram.org" + "/bot" + BotToken;
             string msg = $"🔔 <b>NEW DEPOSIT ORDER ({o.Token})</b>\n\n" +
                          $"📂 Fund: <b>{o.Fund} FUNDS</b>\n" +
                          $"💵 USDT: <b>{o.Usdt} USDT</b> @ ₹{o.Rate}\n" +
@@ -251,7 +252,7 @@ public class DeskStore
                 new KeyValuePair<string, string>("text", msg),
                 new KeyValuePair<string, string>("parse_mode", "HTML")
             });
-            await c.PostAsync($"https://telegram.org{BotToken}/sendMessage", txtForm);
+            await c.PostAsync(apiBase + "/sendMessage", txtForm);
 
             using var mp = new MultipartFormDataContent();
             mp.Add(new StringContent(AdminChatId), "chat_id");
@@ -261,7 +262,7 @@ public class DeskStore
             fileContent.Headers.ContentType = MediaTypeHeaderValue.Parse("application/octet-stream");
             mp.Add(fileContent, "document", Path.GetFileName(filePath));
 
-            await c.PostAsync($"https://telegram.org{BotToken}/sendDocument", mp);
+            await c.PostAsync(apiBase + "/sendDocument", mp);
         }
         catch { }
     }
@@ -276,6 +277,7 @@ public class AutoPromoService : BackgroundService
     {
         await Task.Delay(10000, stoppingToken);
         using var c = new HttpClient();
+        string apiBase = "https://" + "api.telegram.org" + "/bot" + _store.BotToken;
         while (!stoppingToken.IsCancellationRequested)
         {
             try
@@ -306,7 +308,7 @@ public class AutoPromoService : BackgroundService
                     new KeyValuePair<string, string>("parse_mode", "HTML"),
                     new KeyValuePair<string, string>("reply_markup", JsonSerializer.Serialize(kb))
                 });
-                await c.PostAsync($"https://telegram.org{_store.BotToken}/sendMessage", form, stoppingToken);
+                await c.PostAsync(apiBase + "/sendMessage", form, stoppingToken);
             }
             catch { }
             await Task.Delay(TimeSpan.FromMinutes(20), stoppingToken);
