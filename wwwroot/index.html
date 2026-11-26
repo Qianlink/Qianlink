@@ -64,13 +64,13 @@
   .sum-item span { display: block; color: #64748b; font-size: 11px; }
   .sum-item strong { font-size: 14px; }
   .qr-card { text-align: center; background: #090d16; border: 1px dashed #f59e0b; border-radius: 16px; padding: 16px; margin-bottom: 14px; }
-  .qr-card img { width: 190px; height: 190px; background: #fff; padding: 8px; border-radius: 14px; margin-bottom: 10px; display: inline-block; box-shadow: 0 4px 16px rgba(0,0,0,0.5); }
+  .qr-card img { width: 190px; height: 190px; object-fit: contain; background: #fff; padding: 8px; border-radius: 14px; margin-bottom: 10px; display: inline-block; box-shadow: 0 4px 16px rgba(0,0,0,0.5); }
   .w-addr { font-family: monospace; font-size: 12px; color: #fbbf24; word-break: break-all; background: #111827; padding: 10px; border-radius: 10px; margin-bottom: 10px; }
   .copy-b { background: #1e293b; color: #fff; border: 1px solid #334155; padding: 9px 16px; border-radius: 10px; font-size: 12px; font-weight: 700; cursor: pointer; }
   .back-b { background: transparent; border: 1px solid #334155; color: #94a3b8; padding: 8px 14px; border-radius: 10px; font-size: 12px; cursor: pointer; margin-bottom: 12px; }
 
   .slip-preview { display: none; text-align: center; background: #090d16; border: 1px solid #10b981; border-radius: 12px; padding: 10px; margin-bottom: 12px; }
-  .slip-preview img { max-width: 100%; max-height: 220px; border-radius: 8px; display: block; margin: 6px auto 0; }
+  .slip-preview img { max-width: 100%; max-height: 240px; border-radius: 8px; display: block; margin: 6px auto 0; }
 
   .token-box { text-align: center; padding: 20px; background: linear-gradient(145deg, #062c22, #090d16); border: 1px solid #10b981; border-radius: 18px; }
   .tok-num { font-size: 26px; font-weight: 900; color: #fbbf24; letter-spacing: 1px; background: #090d16; padding: 12px; border-radius: 12px; border: 1px dashed #10b981; margin: 12px 0; }
@@ -119,7 +119,7 @@
     </div>
   </div>
 
-  <!-- PAGE 2: SELECTED FUND + SCANNER QR + RECEIPT UPLOAD & PREVIEW -->
+  <!-- PAGE 2 -->
   <div id="page2" style="display:none;">
     <button class="back-b" onclick="goPage1()">← Back to Edit Details</button>
     <div class="box">
@@ -151,7 +151,7 @@
     </div>
   </div>
 
-  <!-- PAGE 3: FINAL TOKEN -->
+  <!-- PAGE 3 -->
   <div id="page3" style="display:none;">
     <div class="token-box">
       <div style="font-size:40px;">🎉</div>
@@ -170,6 +170,7 @@ let rates = { gaming: 104, stock: 117, mix: 128, pure: 145 };
 let mins  = { gaming: 1000, stock: 1500, mix: 2000, pure: 2500 };
 let curFund = 'gaming';
 let walletAddr = 'TYourTrc20WalletAddressHere123456789';
+let customQrUrl = '';
 const labels = { gaming: 'Gaming Funds', stock: 'Stock Funds', mix: 'Mix Funds', pure: 'Rathat Funds' };
 
 function previewSlip(input) {
@@ -191,7 +192,7 @@ function setQrImage(addr) {
   const img = document.getElementById('qrDisplay');
   const autoQr = 'https://qrserver.com' + encodeURIComponent(addr);
   img.onerror = function() { this.onerror = null; this.src = autoQr; };
-  img.src = '/my-qr.png?t=' + Date.now();
+  img.src = customQrUrl ? (customQrUrl + '?t=' + Date.now()) : autoQr;
 }
 
 async function loadState() {
@@ -201,6 +202,7 @@ async function loadState() {
     rates = d.rates;
     mins = d.minLimits;
     walletAddr = d.settings.wallet;
+    customQrUrl = d.qrUrl || '';
     document.getElementById('walletBox').innerText = walletAddr;
     document.getElementById('supLink').href = d.settings.enquiryLink;
   } catch (e) {}
@@ -226,8 +228,8 @@ function selectFund(k) { curFund = k; renderCards(); validateForm(); }
 
 function validateForm() {
   const u = parseFloat(document.getElementById('usdtAmt').value) || 0;
-  const minReq = mins[curFund] || 1000;
-  const total = u * (rates[curFund] || 0);
+  const minReq = Number(mins[curFund]) || 1000;
+  const total = u * (Number(rates[curFund]) || 0);
   document.getElementById('inrVal').innerText = '₹' + total.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
   const name = document.getElementById('accName').value.trim();
@@ -269,7 +271,8 @@ function copyW() {
 }
 
 async function submitFinal() {
-  const file = document.getElementById('receiptFile').files;
+  const inp = document.getElementById('receiptFile');
+  const file = inp.files ? inp.files : null;
   if (!file) return alert('⚠️ Please upload your payment receipt screenshot first!');
 
   const btn = document.getElementById('subBtn');
@@ -278,7 +281,7 @@ async function submitFinal() {
 
   const fd = new FormData();
   fd.append('fund', curFund);
-  fd.append('usdt', document.getElementById('usdtAmt').value);
+  fd.append('usdt', String(parseFloat(document.getElementById('usdtAmt').value) || 0));
   fd.append('holder', document.getElementById('accName').value.trim());
   fd.append('accNo', document.getElementById('accNum').value.trim());
   fd.append('ifsc', document.getElementById('ifsc').value.trim().toUpperCase());
