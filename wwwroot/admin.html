@@ -37,7 +37,7 @@
       <div><label>💎 Rathat Rate (₹)</label><input type="number" step="0.01" id="r_pure" /></div>
       <div><label>💎 Rathat Min USDT</label><input type="number" id="m_pure" /></div>
     </div>
-    <button class="btn" onclick="saveRates()">💾 Save Rates & Minimum Limits</button>
+    <button type="button" class="btn" onclick="saveRates()">💾 Save Rates & Minimum Limits</button>
   </div>
 
   <div class="card">
@@ -50,20 +50,20 @@
     <input type="text" id="s_ex" />
     <label>Any Enquiry / Support Link (Button 2)</label>
     <input type="text" id="s_enq" />
-    <button class="btn btn-blue" onclick="saveSettings()">💾 Save Wallet & Promo Settings</button>
+    <button type="button" class="btn btn-blue" onclick="saveSettings()">💾 Save Wallet & Promo Settings</button>
   </div>
 
   <div class="card">
     <h3>3. Upload TRC-20 QR Code (.JPG / .PNG)</h3>
     <input type="file" id="qrFile" accept="image/*" />
-    <button class="btn" onclick="uploadQr()">📤 Upload QR Image</button>
+    <button type="button" class="btn" onclick="uploadQr()">📤 Upload QR Image</button>
     <div id="curQrPreview" style="text-align:center;margin-top:10px;"></div>
   </div>
 
   <div class="card">
     <h3>4. Change Admin Password</h3>
     <input type="password" id="newPass" placeholder="Enter New Admin Password" />
-    <button class="btn btn-amber" onclick="changePass()">🔑 Update Admin Password</button>
+    <button type="button" class="btn btn-amber" onclick="changePass()">🔑 Update Admin Password</button>
   </div>
 
   <div class="card">
@@ -105,7 +105,7 @@ async function authAndLoad() {
       🏦 <b>${o.holder}</b> | A/C: ${o.accNo} | IFSC: ${o.ifsc}<br/>
       🕒 ${o.timeIst}<br/>
       <a href="${o.receiptUrl}" target="_blank" class="rec-link">🖼️ View Receipt</a>
-      <button onclick="setSt('${o.token}','Paid')" style="background:#10b981;border:none;padding:6px 10px;border-radius:6px;font-weight:700;cursor:pointer;">✅ Mark Paid</button>
+      <button type="button" onclick="setSt('${o.token}','Paid')" style="background:#10b981;border:none;padding:6px 10px;border-radius:6px;font-weight:700;cursor:pointer;">✅ Mark Paid</button>
     </div>
   `).join('') : 'No orders in the last 3 days.';
 }
