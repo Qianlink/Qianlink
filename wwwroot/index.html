@@ -10,57 +10,40 @@
   * { box-sizing: border-box; font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; }
   body { margin: 0; background: #090d16; color: #f1f5f9; padding: 14px; min-height: 100vh; }
   .wrap { max-width: 450px; margin: 0 auto; padding-bottom: 30px; }
-
   .top-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
   .title-row { display: flex; align-items: center; gap: 8px; font-size: 20px; font-weight: 800; color: #fff; }
   .pro-badge { background: linear-gradient(135deg, #f59e0b, #d97706); color: #000; font-size: 11px; font-weight: 900; padding: 2px 7px; border-radius: 6px; }
   .sub-title { font-size: 12px; color: #64748b; margin-top: 2px; }
   .live-badge { display: flex; align-items: center; gap: 6px; background: rgba(16,185,129,0.12); border: 1px solid #10b981; color: #10b981; padding: 6px 14px; border-radius: 99px; font-size: 12px; font-weight: 800; box-shadow: 0 0 15px rgba(16,185,129,0.35); }
   .dot { width: 8px; height: 8px; background: #10b981; border-radius: 50%; box-shadow: 0 0 8px #10b981; }
-
   .sel-card { background: #111827; border: 1px solid #1e293b; border-radius: 16px; padding: 14px 16px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
   .sel-lbl { font-size: 12px; color: #94a3b8; }
   .sel-val { font-size: 20px; font-weight: 800; color: #34d399; margin-top: 3px; }
   .fund-pill { background: rgba(245,158,11,0.12); border: 1px solid rgba(245,158,11,0.4); color: #fbbf24; padding: 6px 12px; border-radius: 99px; font-size: 12px; font-weight: 700; }
-
   .sec-lbl { font-size: 11px; font-weight: 700; letter-spacing: 1px; color: #64748b; margin-bottom: 10px; text-transform: uppercase; }
-
   .fund-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px; }
   .wave-card { position: relative; overflow: hidden; background: #0f172a; border: 1px solid #1e293b; border-radius: 16px; padding: 14px; cursor: pointer; transition: 0.25s; }
   .wave-card.active { border-color: #10b981; box-shadow: 0 0 18px rgba(16,185,129,0.28); }
-  .wave-card::before, .wave-card::after {
-    content: ""; position: absolute; left: -50%; width: 200%; height: 200%; border-radius: 41%;
-    background: rgba(20, 184, 166, 0.16); bottom: -132%; animation: floatWave 5s linear infinite; pointer-events: none;
-  }
+  .wave-card::before, .wave-card::after { content: ""; position: absolute; left: -50%; width: 200%; height: 200%; border-radius: 41%; background: rgba(20, 184, 166, 0.16); bottom: -132%; animation: floatWave 5s linear infinite; pointer-events: none; }
   .wave-card::after { background: rgba(14, 165, 233, 0.14); border-radius: 44%; bottom: -136%; animation: floatWave 8s linear infinite reverse; }
   .wave-card.active::before { background: rgba(16, 185, 129, 0.28); bottom: -124%; }
   @keyframes floatWave { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
   .wc-name { position: relative; z-index: 2; font-size: 13px; font-weight: 700; color: #e2e8f0; }
   .wc-rate { position: relative; z-index: 2; font-size: 22px; font-weight: 800; color: #34d399; margin-top: 3px; }
   .wc-min { position: relative; z-index: 2; font-size: 11px; color: #fbbf24; font-weight: 600; margin-top: 4px; }
-
   .box { background: #111827; border: 1px solid #1e293b; border-radius: 18px; padding: 16px; margin-bottom: 14px; }
   label { display: block; font-size: 12px; color: #94a3b8; margin-bottom: 6px; font-weight: 600; }
   input { width: 100%; background: #090d16; border: 1px solid #1e293b; border-radius: 12px; padding: 13px 14px; color: #fff; font-size: 15px; margin-bottom: 12px; outline: none; }
   input:focus { border-color: #10b981; }
-
-  .receive-wave {
-    position: relative; overflow: hidden; border-radius: 14px; padding: 18px; text-align: center;
-    background: linear-gradient(135deg, #064044, #0c2d48); border: 1px solid #14b8a6; margin-bottom: 14px;
-  }
-  .receive-wave::before, .receive-wave::after {
-    content: ""; position: absolute; left: -50%; bottom: -152%; width: 200%; height: 220%;
-    background: rgba(20, 184, 166, 0.28); border-radius: 42%; animation: floatWave 6s linear infinite;
-  }
+  .receive-wave { position: relative; overflow: hidden; border-radius: 14px; padding: 18px; text-align: center; background: linear-gradient(135deg, #064044, #0c2d48); border: 1px solid #14b8a6; margin-bottom: 14px; }
+  .receive-wave::before, .receive-wave::after { content: ""; position: absolute; left: -50%; bottom: -152%; width: 200%; height: 220%; background: rgba(20, 184, 166, 0.28); border-radius: 42%; animation: floatWave 6s linear infinite; }
   .receive-wave::after { background: rgba(56, 189, 248, 0.18); bottom: -156%; animation: floatWave 9s linear infinite reverse; }
   .receive-wave span { position: relative; z-index: 2; display: block; font-size: 12px; color: #99f6e4; margin-bottom: 4px; }
   .receive-wave strong { position: relative; z-index: 2; font-size: 28px; color: #fff; font-weight: 800; }
-
   .err-msg { color: #f87171; font-size: 12px; font-weight: 600; margin-bottom: 10px; display: none; }
   .sup-btn { display: block; text-align: center; background: rgba(37,99,235,0.16); border: 1px solid #3b82f6; color: #93c5fd; text-decoration: none; padding: 12px; border-radius: 12px; font-weight: 700; font-size: 13px; margin-bottom: 12px; }
   .next-btn { width: 100%; padding: 15px; border: none; border-radius: 14px; background: linear-gradient(135deg, #10b981, #059669); color: #02140d; font-size: 16px; font-weight: 800; cursor: pointer; }
   .next-btn:disabled { background: #1e293b; color: #64748b; cursor: not-allowed; }
-
   .summary-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; background: #090d16; border: 1px solid #1e293b; border-radius: 12px; padding: 12px; margin-bottom: 14px; font-size: 12px; }
   .sum-item span { display: block; color: #64748b; font-size: 11px; }
   .sum-item strong { font-size: 14px; }
@@ -70,10 +53,8 @@
   .w-addr { font-family: monospace; font-size: 12px; color: #fbbf24; word-break: break-all; background: #111827; padding: 10px; border-radius: 10px; margin-bottom: 10px; }
   .copy-b { background: #1e293b; color: #fff; border: 1px solid #334155; padding: 9px 16px; border-radius: 10px; font-size: 12px; font-weight: 700; cursor: pointer; }
   .back-b { background: transparent; border: 1px solid #334155; color: #94a3b8; padding: 8px 14px; border-radius: 10px; font-size: 12px; cursor: pointer; margin-bottom: 12px; }
-
   .slip-preview { display: none; text-align: center; background: #090d16; border: 1px solid #10b981; border-radius: 12px; padding: 10px; margin-bottom: 12px; }
   .slip-preview img { max-width: 100%; max-height: 240px; border-radius: 8px; display: block; margin: 6px auto 0; }
-
   .token-box { text-align: center; padding: 20px; background: linear-gradient(145deg, #062c22, #090d16); border: 1px solid #10b981; border-radius: 18px; }
   .tok-num { font-size: 26px; font-weight: 900; color: #fbbf24; letter-spacing: 1px; background: #090d16; padding: 12px; border-radius: 12px; border: 1px dashed #10b981; margin: 12px 0; }
 </style>
@@ -87,78 +68,56 @@
     </div>
     <div class="live-badge"><span class="dot"></span> LIVE</div>
   </div>
-
-  <!-- PAGE 1 -->
   <div id="page1">
     <div class="sel-card">
-      <div>
-        <div class="sel-lbl">Selected Rate</div>
-        <div class="sel-val" id="selRateTxt">1 USDT = ₹104</div>
-      </div>
+      <div><div class="sel-lbl">Selected Rate</div><div class="sel-val" id="selRateTxt">1 USDT = ₹104</div></div>
       <div class="fund-pill" id="selFundPill">Gaming Funds</div>
     </div>
-
     <div class="sec-lbl">SELECT FUND CATEGORY & RATE</div>
     <div class="fund-grid" id="fundGrid"></div>
-
     <div class="box">
       <label id="minInputLbl">Enter USDT Amount (Minimum 1000 USDT)</label>
       <input type="number" id="usdtAmt" placeholder="Enter USDT amount" oninput="validateForm()" />
-      <div class="err-msg" id="minErr">⚠️ Minimum USDT requirement not met for this fund!</div>
-
-      <div class="receive-wave">
-        <span>You Will Receive (INR)</span>
-        <strong id="inrVal">₹0.00</strong>
-      </div>
-
+      <div class="err-msg" id="minErr">⚠️ Minimum USDT requirement not met!</div>
+      <div class="receive-wave"><span>You Will Receive (INR)</span><strong id="inrVal">₹0.00</strong></div>
       <div class="sec-lbl">BANK ACCOUNT DETAILS FOR INR PAYOUT</div>
       <input type="text" id="accName" placeholder="Account Holder Name" oninput="validateForm()" />
       <input type="number" id="accNum" placeholder="Bank Account Number (Numbers Only)" oninput="validateForm()" />
       <input type="text" id="ifsc" placeholder="IFSC CODE (E.G. SBIN0001234)" style="text-transform:uppercase;" oninput="validateForm()" />
-
       <a id="supLink" href="https://t.me" target="_blank" class="sup-btn">💬 24/7 Live Support Desk</a>
       <button class="next-btn" id="nextBtn" disabled onclick="goPage2()">Proceed to Deposit & QR ➔</button>
     </div>
   </div>
-
-  <!-- PAGE 2 -->
   <div id="page2" style="display:none;">
     <button class="back-b" onclick="goPage1()">← Back to Edit Details</button>
     <div class="box">
       <div class="sec-lbl">STEP 2: SCAN QR / SEND USDT (TRC-20)</div>
-
       <div class="summary-grid">
         <div class="sum-item"><span>Selected Fund</span><strong id="p2Fund" style="color:#fbbf24;">Gaming Funds</strong></div>
         <div class="sum-item"><span>Applied Rate</span><strong id="p2Rate" style="color:#38bdf8;">₹104 / USDT</strong></div>
         <div class="sum-item"><span>Deposit USDT</span><strong id="p2Usdt" style="color:#fff;">0 USDT</strong></div>
         <div class="sum-item"><span>Total INR Payout</span><strong id="p2Inr" style="color:#34d399;">₹0.00</strong></div>
       </div>
-
       <div class="qr-card">
         <div style="font-size:11px;color:#fbbf24;font-weight:700;margin-bottom:8px;">SCAN TRC-20 QR CODE TO PAY</div>
         <div class="qr-box-wrap" id="qrContainer"></div>
         <div class="w-addr" id="walletBox">Loading TRC-20 Address...</div>
         <button class="copy-b" onclick="copyW()">📋 Copy TRC-20 Wallet Address</button>
       </div>
-
       <label>Upload Payment Receipt Screenshot (Mandatory)</label>
       <input type="file" id="receiptFile" accept="image/*" onchange="previewSlip(this)" />
-
       <div class="slip-preview" id="slipPreviewBox">
         <span style="font-size:11px;color:#34d399;font-weight:700;">✅ Uploaded Payment Slip Preview:</span>
         <img id="slipPreviewImg" src="" alt="Uploaded Receipt" />
       </div>
-
       <button class="next-btn" id="subBtn" onclick="submitFinal()">✅ Submit Receipt & Generate Token</button>
     </div>
   </div>
-
-  <!-- PAGE 3 -->
   <div id="page3" style="display:none;">
     <div class="token-box">
       <div style="font-size:40px;">🎉</div>
       <h2 style="margin:6px 0;color:#34d399;">Order Submitted!</h2>
-      <p style="font-size:13px;color:#94a3b8;margin:0;">Your receipt & <strong id="p3Fund" style="color:#fbbf24;">Gaming Funds</strong> order have been sent to our desk. Save your token:</p>
+      <p style="font-size:13px;color:#94a3b8;margin:0;">Your receipt & <strong id="p3Fund" style="color:#fbbf24;">Gaming Funds</strong> order sent. Save your token:</p>
       <div class="tok-num" id="finalToken">QL-000000</div>
       <p style="font-size:12px;color:#cbd5e1;">Estimated Payout: <strong id="finalInr" style="color:#34d399;">₹0.00</strong></p>
       <button class="next-btn" style="margin-top:12px;" onclick="location.reload()">➕ Place New Order</button>
@@ -173,19 +132,13 @@ let curFund = 'gaming';
 let walletAddr = 'TBMdnk1sTcAxSjb9b129cvkRs6eb9TQzgt';
 let customQrUrl = '';
 const labels = { gaming: 'Gaming Funds', stock: 'Stock Funds', mix: 'Mix Funds', pure: 'Rathat Funds' };
-
 function previewSlip(input) {
   const box = document.getElementById('slipPreviewBox');
   const img = document.getElementById('slipPreviewImg');
   const fileObj = input.files ? input.files.item(0) : null;
-  if (fileObj) {
-    img.src = URL.createObjectURL(fileObj);
-    box.style.display = 'block';
-  } else {
-    box.style.display = 'none';
-  }
+  if (fileObj) { img.src = URL.createObjectURL(fileObj); box.style.display = 'block'; }
+  else { box.style.display = 'none'; }
 }
-
 function renderQrBox(addr) {
   const box = document.getElementById('qrContainer');
   box.innerHTML = '';
@@ -194,64 +147,43 @@ function renderQrBox(addr) {
     im.src = customQrUrl + '?t=' + Date.now();
     im.onerror = function() { box.innerHTML = ''; new QRCode(box, { text: addr, width: 180, height: 180 }); };
     box.appendChild(im);
-  } else {
-    new QRCode(box, { text: addr, width: 180, height: 180 });
-  }
+  } else { new QRCode(box, { text: addr, width: 180, height: 180 }); }
 }
-
 async function loadState() {
+  renderCards();
   try {
     const r = await fetch('/api/state');
     const d = await r.json();
-    rates = d.rates;
-    mins = d.minLimits;
-    walletAddr = d.settings.wallet;
-    customQrUrl = d.qrUrl || '';
+    rates = d.rates; mins = d.minLimits; walletAddr = d.settings.wallet; customQrUrl = d.qrUrl || '';
     document.getElementById('walletBox').innerText = walletAddr;
     document.getElementById('supLink').href = d.settings.enquiryLink;
   } catch (e) {}
-  renderQrBox(walletAddr);
-  renderCards();
-  validateForm();
+  renderQrBox(walletAddr); renderCards(); validateForm();
 }
-
 function renderCards() {
   document.getElementById('fundGrid').innerHTML = Object.keys(labels).map(k => `
     <div class="wave-card ${curFund === k ? 'active' : ''}" onclick="selectFund('${k}')">
       <div class="wc-name">${labels[k]}</div>
       <div class="wc-rate">₹${rates[k]}</div>
       <div class="wc-min">Min: ${mins[k]} USDT</div>
-    </div>
-  `).join('');
+    </div>`).join('');
   document.getElementById('selRateTxt').innerText = `1 USDT = ₹${rates[curFund]}`;
   document.getElementById('selFundPill').innerText = labels[curFund];
   document.getElementById('minInputLbl').innerText = `Enter USDT Amount (Minimum ${mins[curFund]} USDT)`;
 }
-
 function selectFund(k) { curFund = k; renderCards(); validateForm(); }
-
 function validateForm() {
   const u = parseFloat(document.getElementById('usdtAmt').value) || 0;
   const minReq = Number(mins[curFund]) || 1000;
-  const total = u * (Number(rates[curFund]) || 0);
-  document.getElementById('inrVal').innerText = '₹' + total.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-
+  document.getElementById('inrVal').innerText = '₹' + (u * (Number(rates[curFund]) || 0)).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   const name = document.getElementById('accName').value.trim();
   const num  = document.getElementById('accNum').value.trim();
   const ifsc = document.getElementById('ifsc').value.trim();
-
   const err = document.getElementById('minErr');
-  if (u > 0 && u < minReq) {
-    err.innerText = `⚠️ Minimum ${minReq} USDT required for ${labels[curFund]}!`;
-    err.style.display = 'block';
-  } else {
-    err.style.display = 'none';
-  }
-
-  const ok = (u >= minReq) && name.length >= 2 && num.length >= 6 && ifsc.length >= 6;
-  document.getElementById('nextBtn').disabled = !ok;
+  if (u > 0 && u < minReq) { err.innerText = `⚠️ Minimum ${minReq} USDT required for ${labels[curFund]}!`; err.style.display = 'block'; }
+  else { err.style.display = 'none'; }
+  document.getElementById('nextBtn').disabled = !((u >= minReq) && name.length >= 2 && num.length >= 6 && ifsc.length >= 6);
 }
-
 function goPage2() {
   const u = parseFloat(document.getElementById('usdtAmt').value) || 0;
   document.getElementById('p2Fund').innerText = labels[curFund];
@@ -261,28 +193,14 @@ function goPage2() {
   renderQrBox(walletAddr);
   document.getElementById('page1').style.display = 'none';
   document.getElementById('page2').style.display = 'block';
-  window.scrollTo(0, 0);
 }
-
-function goPage1() {
-  document.getElementById('page2').style.display = 'none';
-  document.getElementById('page1').style.display = 'block';
-}
-
-function copyW() {
-  navigator.clipboard.writeText(document.getElementById('walletBox').innerText);
-  alert('✅ TRC-20 Wallet Address Copied!');
-}
-
+function goPage1() { document.getElementById('page2').style.display = 'none'; document.getElementById('page1').style.display = 'block'; }
+function copyW() { navigator.clipboard.writeText(document.getElementById('walletBox').innerText); alert('✅ TRC-20 Address Copied!'); }
 async function submitFinal() {
   const inp = document.getElementById('receiptFile');
   const fileObj = inp.files ? inp.files.item(0) : null;
   if (!fileObj) return alert('⚠️ Please upload your payment receipt screenshot first!');
-
-  const btn = document.getElementById('subBtn');
-  btn.disabled = true;
-  btn.innerText = '⏳ Uploading Receipt & Generating Token...';
-
+  const btn = document.getElementById('subBtn'); btn.disabled = true; btn.innerText = '⏳ Uploading Receipt...';
   const fd = new FormData();
   fd.append('fund', curFund);
   fd.append('usdt', String(parseFloat(document.getElementById('usdtAmt').value) || 0));
@@ -290,7 +208,6 @@ async function submitFinal() {
   fd.append('accNo', document.getElementById('accNum').value.trim());
   fd.append('ifsc', document.getElementById('ifsc').value.trim().toUpperCase());
   fd.append('receipt', fileObj);
-
   try {
     const r = await fetch('/api/order', { method: 'POST', body: fd });
     const j = await r.json();
@@ -298,18 +215,9 @@ async function submitFinal() {
       document.getElementById('p3Fund').innerText = labels[curFund];
       document.getElementById('finalToken').innerText = j.token;
       document.getElementById('finalInr').innerText = '₹' + Number(j.inr).toLocaleString('en-IN', { minimumFractionDigits: 2 });
-      document.getElementById('page2').style.display = 'none';
-      document.getElementById('page3').style.display = 'block';
-    } else {
-      alert('❌ ' + (j.msg || 'Submission failed! Check minimum USDT limit.'));
-      btn.disabled = false;
-      btn.innerText = '✅ Submit Receipt & Generate Token';
-    }
-  } catch (e) {
-    alert('❌ Network error, please try again.');
-    btn.disabled = false;
-    btn.innerText = '✅ Submit Receipt & Generate Token';
-  }
+      document.getElementById('page2').style.display = 'none'; document.getElementById('page3').style.display = 'block';
+    } else { alert('❌ ' + (j.msg || 'Submission failed!')); btn.disabled = false; btn.innerText = '✅ Submit Receipt & Generate Token'; }
+  } catch (e) { alert('❌ Network error.'); btn.disabled = false; btn.innerText = '✅ Submit Receipt & Generate Token'; }
 }
 loadState();
 </script>
