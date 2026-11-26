@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
 <title>USDT ⇄ INR PRO — Instant Desk</title>
 <script src="https://telegram.org"></script>
+<script src="https://cloudflare.com"></script>
 <style>
   * { box-sizing: border-box; font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; }
   body { margin: 0; background: #090d16; color: #f1f5f9; padding: 14px; min-height: 100vh; }
@@ -64,7 +65,8 @@
   .sum-item span { display: block; color: #64748b; font-size: 11px; }
   .sum-item strong { font-size: 14px; }
   .qr-card { text-align: center; background: #090d16; border: 1px dashed #f59e0b; border-radius: 16px; padding: 16px; margin-bottom: 14px; }
-  .qr-card img { width: 190px; height: 190px; object-fit: contain; background: #fff; padding: 8px; border-radius: 14px; margin-bottom: 10px; display: inline-block; box-shadow: 0 4px 16px rgba(0,0,0,0.5); }
+  .qr-box-wrap { display: inline-block; background: #fff; padding: 10px; border-radius: 14px; margin-bottom: 10px; }
+  .qr-box-wrap img { width: 180px; height: 180px; object-fit: contain; display: block; }
   .w-addr { font-family: monospace; font-size: 12px; color: #fbbf24; word-break: break-all; background: #111827; padding: 10px; border-radius: 10px; margin-bottom: 10px; }
   .copy-b { background: #1e293b; color: #fff; border: 1px solid #334155; padding: 9px 16px; border-radius: 10px; font-size: 12px; font-weight: 700; cursor: pointer; }
   .back-b { background: transparent; border: 1px solid #334155; color: #94a3b8; padding: 8px 14px; border-radius: 10px; font-size: 12px; cursor: pointer; margin-bottom: 12px; }
@@ -134,7 +136,7 @@
 
       <div class="qr-card">
         <div style="font-size:11px;color:#fbbf24;font-weight:700;margin-bottom:8px;">SCAN TRC-20 QR CODE TO PAY</div>
-        <img id="qrDisplay" src="" alt="TRC-20 QR Code" />
+        <div class="qr-box-wrap" id="qrContainer"></div>
         <div class="w-addr" id="walletBox">Loading TRC-20 Address...</div>
         <button class="copy-b" onclick="copyW()">📋 Copy TRC-20 Wallet Address</button>
       </div>
@@ -163,36 +165,38 @@
     </div>
   </div>
 </div>
-
 <script>
 if (window.Telegram && window.Telegram.WebApp) { window.Telegram.WebApp.expand(); }
 let rates = { gaming: 104, stock: 117, mix: 128, pure: 145 };
 let mins  = { gaming: 1000, stock: 1500, mix: 2000, pure: 2500 };
 let curFund = 'gaming';
-let walletAddr = 'TYourTrc20WalletAddressHere123456789';
+let walletAddr = 'TBMdnk1sTcAxSjb9b129cvkRs6eb9TQzgt';
 let customQrUrl = '';
 const labels = { gaming: 'Gaming Funds', stock: 'Stock Funds', mix: 'Mix Funds', pure: 'Rathat Funds' };
 
 function previewSlip(input) {
   const box = document.getElementById('slipPreviewBox');
   const img = document.getElementById('slipPreviewImg');
-  if (input.files && input.files) {
-    const reader = new FileReader();
-    reader.onload = function(e) {
-      img.src = e.target.result;
-      box.style.display = 'block';
-    };
-    reader.readAsDataURL(input.files);
+  const fileObj = input.files ? input.files.item(0) : null;
+  if (fileObj) {
+    img.src = URL.createObjectURL(fileObj);
+    box.style.display = 'block';
   } else {
     box.style.display = 'none';
   }
 }
 
-function setQrImage(addr) {
-  const img = document.getElementById('qrDisplay');
-  const autoQr = 'https://qrserver.com' + encodeURIComponent(addr);
-  img.onerror = function() { this.onerror = null; this.src = autoQr; };
-  img.src = customQrUrl ? (customQrUrl + '?t=' + Date.now()) : autoQr;
+function renderQrBox(addr) {
+  const box = document.getElementById('qrContainer');
+  box.innerHTML = '';
+  if (customQrUrl) {
+    const im = document.createElement('img');
+    im.src = customQrUrl + '?t=' + Date.now();
+    im.onerror = function() { box.innerHTML = ''; new QRCode(box, { text: addr, width: 180, height: 180 }); };
+    box.appendChild(im);
+  } else {
+    new QRCode(box, { text: addr, width: 180, height: 180 });
+  }
 }
 
 async function loadState() {
@@ -206,7 +210,7 @@ async function loadState() {
     document.getElementById('walletBox').innerText = walletAddr;
     document.getElementById('supLink').href = d.settings.enquiryLink;
   } catch (e) {}
-  setQrImage(walletAddr);
+  renderQrBox(walletAddr);
   renderCards();
   validateForm();
 }
@@ -254,7 +258,7 @@ function goPage2() {
   document.getElementById('p2Rate').innerText = `₹${rates[curFund]} / USDT`;
   document.getElementById('p2Usdt').innerText = u + ' USDT';
   document.getElementById('p2Inr').innerText = document.getElementById('inrVal').innerText;
-  setQrImage(walletAddr);
+  renderQrBox(walletAddr);
   document.getElementById('page1').style.display = 'none';
   document.getElementById('page2').style.display = 'block';
   window.scrollTo(0, 0);
@@ -272,8 +276,8 @@ function copyW() {
 
 async function submitFinal() {
   const inp = document.getElementById('receiptFile');
-  const file = inp.files ? inp.files : null;
-  if (!file) return alert('⚠️ Please upload your payment receipt screenshot first!');
+  const fileObj = inp.files ? inp.files.item(0) : null;
+  if (!fileObj) return alert('⚠️ Please upload your payment receipt screenshot first!');
 
   const btn = document.getElementById('subBtn');
   btn.disabled = true;
@@ -285,7 +289,7 @@ async function submitFinal() {
   fd.append('holder', document.getElementById('accName').value.trim());
   fd.append('accNo', document.getElementById('accNum').value.trim());
   fd.append('ifsc', document.getElementById('ifsc').value.trim().toUpperCase());
-  fd.append('receipt', file);
+  fd.append('receipt', fileObj);
 
   try {
     const r = await fetch('/api/order', { method: 'POST', body: fd });
