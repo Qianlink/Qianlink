@@ -60,7 +60,6 @@
   .next-btn { width: 100%; padding: 15px; border: none; border-radius: 14px; background: linear-gradient(135deg, #10b981, #059669); color: #02140d; font-size: 16px; font-weight: 800; cursor: pointer; }
   .next-btn:disabled { background: #1e293b; color: #64748b; cursor: not-allowed; }
 
-  /* Page 2 Summary & QR */
   .summary-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; background: #090d16; border: 1px solid #1e293b; border-radius: 12px; padding: 12px; margin-bottom: 14px; font-size: 12px; }
   .sum-item span { display: block; color: #64748b; font-size: 11px; }
   .sum-item strong { font-size: 14px; }
@@ -69,6 +68,9 @@
   .w-addr { font-family: monospace; font-size: 12px; color: #fbbf24; word-break: break-all; background: #111827; padding: 10px; border-radius: 10px; margin-bottom: 10px; }
   .copy-b { background: #1e293b; color: #fff; border: 1px solid #334155; padding: 9px 16px; border-radius: 10px; font-size: 12px; font-weight: 700; cursor: pointer; }
   .back-b { background: transparent; border: 1px solid #334155; color: #94a3b8; padding: 8px 14px; border-radius: 10px; font-size: 12px; cursor: pointer; margin-bottom: 12px; }
+
+  .slip-preview { display: none; text-align: center; background: #090d16; border: 1px solid #10b981; border-radius: 12px; padding: 10px; margin-bottom: 12px; }
+  .slip-preview img { max-width: 100%; max-height: 240px; border-radius: 8px; display: block; margin: 6px auto 0; }
 
   .token-box { text-align: center; padding: 20px; background: linear-gradient(145deg, #062c22, #090d16); border: 1px solid #10b981; border-radius: 18px; }
   .tok-num { font-size: 26px; font-weight: 900; color: #fbbf24; letter-spacing: 1px; background: #090d16; padding: 12px; border-radius: 12px; border: 1px dashed #10b981; margin: 12px 0; }
@@ -117,7 +119,7 @@
     </div>
   </div>
 
-  <!-- PAGE 2: SELECTED FUND + SCANNER QR + RECEIPT UPLOAD -->
+  <!-- PAGE 2: SELECTED FUND + SCANNER QR + RECEIPT UPLOAD & PREVIEW -->
   <div id="page2" style="display:none;">
     <button class="back-b" onclick="goPage1()">← Back to Edit Details</button>
     <div class="box">
@@ -138,7 +140,12 @@
       </div>
 
       <label>Upload Payment Receipt Screenshot (Mandatory)</label>
-      <input type="file" id="receiptFile" accept="image/*" />
+      <input type="file" id="receiptFile" accept="image/*" onchange="previewSlip(this)" />
+
+      <div class="slip-preview" id="slipPreviewBox">
+        <span style="font-size:11px;color:#34d399;font-weight:700;">✅ Uploaded Payment Slip Preview:</span>
+        <img id="slipPreviewImg" src="" alt="Uploaded Receipt" />
+      </div>
 
       <button class="next-btn" id="subBtn" onclick="submitFinal()">✅ Submit Receipt & Generate Token</button>
     </div>
@@ -163,7 +170,22 @@ let rates = { gaming: 104, stock: 117, mix: 128, pure: 145 };
 let mins  = { gaming: 1000, stock: 1500, mix: 2000, pure: 2500 };
 let curFund = 'gaming';
 let walletAddr = 'TYourTrc20WalletAddressHere123456789';
-const labels = { gaming: 'Gaming Funds', stock: 'Stock Funds', mix: 'Mix Funds', pure: 'Pure Funds' };
+const labels = { gaming: 'Gaming Funds', stock: 'Stock Funds', mix: 'Mix Funds', pure: 'Rathat Funds' };
+
+function previewSlip(input) {
+  const box = document.getElementById('slipPreviewBox');
+  const img = document.getElementById('slipPreviewImg');
+  if (input.files && input.files) {
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      img.src = e.target.result;
+      box.style.display = 'block';
+    };
+    reader.readAsDataURL(input.files);
+  } else {
+    box.style.display = 'none';
+  }
+}
 
 function setQrImage(addr) {
   const img = document.getElementById('qrDisplay');
@@ -247,7 +269,7 @@ function copyW() {
 }
 
 async function submitFinal() {
-  const file = document.getElementById('receiptFile').files[0];
+  const file = document.getElementById('receiptFile').files;
   if (!file) return alert('⚠️ Please upload your payment receipt screenshot first!');
 
   const btn = document.getElementById('subBtn');
