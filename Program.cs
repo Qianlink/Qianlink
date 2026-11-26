@@ -22,6 +22,13 @@ app.MapPost("/api/admin/password", (DeskStore s, ChangePassReq req) =>
     return Results.Ok(new { ok = true });
 });
 
+app.MapPost("/api/admin/toggle-desk", (DeskStore s, ToggleReq req) =>
+{
+    if (!s.CheckPassword(req.Password)) return Results.Unauthorized();
+    s.SetDeskOpen(req.IsOpen);
+    return Results.Ok(new { ok = true, isOpen = s.IsDeskOpen });
+});
+
 app.MapPost("/api/admin/state", (DeskStore s, PassReq req) =>
     s.CheckPassword(req.Password) ? Results.Ok(s.GetAdminState()) : Results.Unauthorized());
 
@@ -59,6 +66,7 @@ app.MapPost("/api/upload-qr", async (HttpRequest req, DeskStore s, IWebHostEnvir
 
 app.MapPost("/api/order", async (HttpRequest req, DeskStore s, IWebHostEnvironment env) =>
 {
+    if (!s.IsDeskOpen) return Results.BadRequest(new { ok = false, msg = "Desk is currently closed!" });
     if (!req.HasFormContentType) return Results.BadRequest();
     var form = await req.ReadFormAsync();
     var fund = form["fund"].ToString().ToLower();
@@ -98,6 +106,7 @@ var port = Environment.GetEnvironmentVariable("PORT") ?? "10000";
 app.Run($"http://0.0.0:{port}");
 public record PassReq(string Password);
 public record ChangePassReq(string OldPassword, string NewPassword);
+public record ToggleReq(string Password, bool IsOpen);
 public record RatesUpdateReq(string Password, Dictionary<string, decimal> Rates, Dictionary<string, decimal> MinLimits);
 public record SettingsUpdateReq(string Password, AppSettings Settings);
 public record StatusReq(string Password, string Token, string Status);
@@ -135,6 +144,7 @@ public class DeskStore
 
     private readonly object _lock = new();
     private string _adminPass = "SAMAR@0219";
+    public bool IsDeskOpen { get; private set; } = true;
     public string QrUrl { get; private set; } = "";
     private Dictionary<string, decimal> _rates = new() { ["gaming"] = 104m, ["stock"] = 117m, ["mix"] = 128m, ["pure"] = 145m };
     private Dictionary<string, decimal> _mins = new() { ["gaming"] = 1000m, ["stock"] = 1500m, ["mix"] = 2000m, ["pure"] = 2500m };
@@ -143,6 +153,7 @@ public class DeskStore
 
     public bool CheckPassword(string p) { lock (_lock) return p == _adminPass; }
     public void UpdatePassword(string np) { lock (_lock) _adminPass = np; }
+    public void SetDeskOpen(bool open) { lock (_lock) IsDeskOpen = open; }
     public void SetQrUrl(string u) { lock (_lock) QrUrl = u; }
 
     public void CleanupOldRecords()
@@ -162,13 +173,13 @@ public class DeskStore
     public object GetPublicState()
     {
         CleanupOldRecords();
-        lock (_lock) return new { rates = _rates, minLimits = _mins, settings = Settings, qrUrl = QrUrl };
+        lock (_lock) return new { isOpen = IsDeskOpen, rates = _rates, minLimits = _mins, settings = Settings, qrUrl = QrUrl };
     }
 
     public object GetAdminState()
     {
         CleanupOldRecords();
-        lock (_lock) return new { rates = _rates, minLimits = _mins, settings = Settings, orders = _orders, qrUrl = QrUrl };
+        lock (_lock) return new { isOpen = IsDeskOpen, rates = _rates, minLimits = _mins, settings = Settings, orders = _orders, qrUrl = QrUrl };
     }
 
     public void UpdateRatesAndMins(Dictionary<string, decimal> r, Dictionary<string, decimal> m)
@@ -282,33 +293,36 @@ public class AutoPromoService : BackgroundService
         {
             try
             {
-                _store.CleanupOldRecords();
-                dynamic st = _store.GetPublicState();
-                Dictionary<string, decimal> r = st.rates;
-                Dictionary<string, decimal> m = st.minLimits;
-                AppSettings cfg = st.settings;
-                string msg = $"🔥 <b>QIANLINK LIVE USDT ⇄ INR DESK</b>\n\n{cfg.PromoText}\n\n" +
-                             $"🎮 Gaming Fund: <b>₹{r["gaming"]}</b> (Min {m["gaming"]} USDT)\n" +
-                             $"📈 Stock Fund: <b>₹{r["stock"]}</b> (Min {m["stock"]} USDT)\n" +
-                             $"🔄 Mix Fund: <b>₹{r["mix"]}</b> (Min {m["mix"]} USDT)\n" +
-                             $"💎 Rathat Fund: <b>₹{r["pure"]}</b> (Min {m["pure"]} USDT)\n\n" +
-                             $"⚡ Instant INR Settlement | 100% Safe Desk";
-                var kb = new
+                if (_store.IsDeskOpen)
                 {
-                    inline_keyboard = new[]
+                    _store.CleanupOldRecords();
+                    dynamic st = _store.GetPublicState();
+                    Dictionary<string, decimal> r = st.rates;
+                    Dictionary<string, decimal> m = st.minLimits;
+                    AppSettings cfg = st.settings;
+                    string msg = $"🔥 <b>QIANLINK LIVE USDT ⇄ INR DESK</b>\n\n{cfg.PromoText}\n\n" +
+                                 $"🎮 Gaming Fund: <b>₹{r["gaming"]}</b> (Min {m["gaming"]} USDT)\n" +
+                                 $"📈 Stock Fund: <b>₹{r["stock"]}</b> (Min {m["stock"]} USDT)\n" +
+                                 $"🔄 Mix Fund: <b>₹{r["mix"]}</b> (Min {m["mix"]} USDT)\n" +
+                                 $"💎 Rathat Fund: <b>₹{r["pure"]}</b> (Min {m["pure"]} USDT)\n\n" +
+                                 $"⚡ Instant INR Settlement | 100% Safe Desk";
+                    var kb = new
                     {
-                        new[] { new { text = "💱 Start USDT Work / Exchange", url = cfg.ExchangeLink } },
-                        new[] { new { text = "💬 Any Enquiry / Live Support", url = cfg.EnquiryLink } }
-                    }
-                };
-                var form = new FormUrlEncodedContent(new[]
-                {
-                    new KeyValuePair<string, string>("chat_id", _store.PromoTarget),
-                    new KeyValuePair<string, string>("text", msg),
-                    new KeyValuePair<string, string>("parse_mode", "HTML"),
-                    new KeyValuePair<string, string>("reply_markup", JsonSerializer.Serialize(kb))
-                });
-                await c.PostAsync(apiBase + "/sendMessage", form, stoppingToken);
+                        inline_keyboard = new[]
+                        {
+                            new[] { new { text = "💱 Start USDT Work / Exchange", url = cfg.ExchangeLink } },
+                            new[] { new { text = "💬 Any Enquiry / Live Support", url = cfg.EnquiryLink } }
+                        }
+                    };
+                    var form = new FormUrlEncodedContent(new[]
+                    {
+                        new KeyValuePair<string, string>("chat_id", _store.PromoTarget),
+                        new KeyValuePair<string, string>("text", msg),
+                        new KeyValuePair<string, string>("parse_mode", "HTML"),
+                        new KeyValuePair<string, string>("reply_markup", JsonSerializer.Serialize(kb))
+                    });
+                    await c.PostAsync(apiBase + "/sendMessage", form, stoppingToken);
+                }
             }
             catch { }
             await Task.Delay(TimeSpan.FromMinutes(20), stoppingToken);
