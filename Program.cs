@@ -62,7 +62,7 @@ app.MapPost("/api/order", async (HttpRequest req, DeskStore s, IWebHostEnvironme
     if (!req.HasFormContentType) return Results.BadRequest();
     var form = await req.ReadFormAsync();
     var fund = form["fund"].ToString().ToLower();
-    decimal.TryParse(form["usdt"].ToString(), out var usdt);
+    decimal.TryParse(form["usdt"].ToString(), System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out var usdt);
     var holder = form["holder"].ToString().Trim();
     var accNo = form["accNo"].ToString().Trim();
     var ifsc = form["ifsc"].ToString().Trim().ToUpper();
@@ -135,6 +135,7 @@ public class DeskStore
 
     private readonly object _lock = new();
     private string _adminPass = "SAMAR@0219";
+    public string QrUrl { get; private set; } = "";
     private Dictionary<string, decimal> _rates = new() { ["gaming"] = 104m, ["stock"] = 117m, ["mix"] = 128m, ["pure"] = 145m };
     private Dictionary<string, decimal> _mins = new() { ["gaming"] = 1000m, ["stock"] = 1500m, ["mix"] = 2000m, ["pure"] = 2500m };
     public AppSettings Settings { get; private set; } = new();
@@ -142,6 +143,7 @@ public class DeskStore
 
     public bool CheckPassword(string p) { lock (_lock) return p == _adminPass; }
     public void UpdatePassword(string np) { lock (_lock) _adminPass = np; }
+    public void SetQrUrl(string u) { lock (_lock) QrUrl = u; }
 
     public void CleanupOldRecords()
     {
@@ -160,13 +162,13 @@ public class DeskStore
     public object GetPublicState()
     {
         CleanupOldRecords();
-        lock (_lock) return new { rates = _rates, minLimits = _mins, settings = Settings };
+        lock (_lock) return new { rates = _rates, minLimits = _mins, settings = Settings, qrUrl = QrUrl };
     }
 
     public object GetAdminState()
     {
         CleanupOldRecords();
-        lock (_lock) return new { rates = _rates, minLimits = _mins, settings = Settings, orders = _orders };
+        lock (_lock) return new { rates = _rates, minLimits = _mins, settings = Settings, orders = _orders, qrUrl = QrUrl };
     }
 
     public void UpdateRatesAndMins(Dictionary<string, decimal> r, Dictionary<string, decimal> m)
