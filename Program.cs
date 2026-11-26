@@ -235,28 +235,40 @@ public class DeskStore
         try
         {
             using var c = new HttpClient();
-            string caption = $"🔔 <b>NEW DEPOSIT ORDER ({o.Token})</b>\n\n" +
-                             $"📂 Fund: <b>{o.Fund} FUNDS</b>\n" +
-                             $"💵 USDT: <b>{o.Usdt} USDT</b> @ ₹{o.Rate}\n" +
-                             $"💰 Total INR: <b>₹{o.Inr:N2}</b>\n\n" +
-                             $"🏦 <b>Bank Payout Details:</b>\n" +
-                             $"• Name: <code>{o.Holder}</code>\n" +
-                             $"• A/C No: <code>{o.AccNo}</code>\n" +
-                             $"• IFSC: <code>{o.Ifsc}</code>\n\n" +
-                             $"🕒 Time: {o.TimeIst}";
+            string msg = $"🔔 <b>NEW DEPOSIT ORDER ({o.Token})</b>\n\n" +
+                         $"📂 Fund: <b>{o.Fund} FUNDS</b>\n" +
+                         $"💵 USDT: <b>{o.Usdt} USDT</b> @ ₹{o.Rate}\n" +
+                         $"💰 Total INR: <b>₹{o.Inr:N2}</b>\n\n" +
+                         $"🏦 <b>Bank Payout Details:</b>\n" +
+                         $"• Name: <code>{o.Holder}</code>\n" +
+                         $"• A/C No: <code>{o.AccNo}</code>\n" +
+                         $"• IFSC: <code>{o.Ifsc}</code>\n\n" +
+                         $"🕒 Time: {o.TimeIst}";
+
+            var txtForm = new FormUrlEncodedContent(new[]
+            {
+                new KeyValuePair<string, string>("chat_id", AdminChatId),
+                new KeyValuePair<string, string>("text", msg),
+                new KeyValuePair<string, string>("parse_mode", "HTML")
+            });
+            var txtResp = await c.PostAsync($"https://telegram.org{BotToken}/sendMessage", txtForm);
+            Console.WriteLine($"TG MSG: {txtResp.StatusCode} - {await txtResp.Content.ReadAsStringAsync()}");
 
             using var mp = new MultipartFormDataContent();
             mp.Add(new StringContent(AdminChatId), "chat_id");
-            mp.Add(new StringContent(caption), "caption");
-            mp.Add(new StringContent("HTML"), "parse_mode");
+            mp.Add(new StringContent($"🧾 Receipt for Order {o.Token}"), "caption");
             var fileBytes = await File.ReadAllBytesAsync(filePath);
             var fileContent = new ByteArrayContent(fileBytes);
-            fileContent.Headers.ContentType = MediaTypeHeaderValue.Parse("image/jpeg");
-            mp.Add(fileContent, "photo", Path.GetFileName(filePath));
+            fileContent.Headers.ContentType = MediaTypeHeaderValue.Parse("application/octet-stream");
+            mp.Add(fileContent, "document", Path.GetFileName(filePath));
 
-            await c.PostAsync($"https://telegram.org{BotToken}/sendPhoto", mp);
+            var docResp = await c.PostAsync($"https://telegram.org{BotToken}/sendDocument", mp);
+            Console.WriteLine($"TG FILE: {docResp.StatusCode}");
         }
-        catch { }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"TG ERR: {ex.Message}");
+        }
     }
 }
 
