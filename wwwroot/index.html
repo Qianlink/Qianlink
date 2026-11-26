@@ -60,8 +60,12 @@
   .next-btn { width: 100%; padding: 15px; border: none; border-radius: 14px; background: linear-gradient(135deg, #10b981, #059669); color: #02140d; font-size: 16px; font-weight: 800; cursor: pointer; }
   .next-btn:disabled { background: #1e293b; color: #64748b; cursor: not-allowed; }
 
+  /* Page 2 Summary & QR */
+  .summary-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; background: #090d16; border: 1px solid #1e293b; border-radius: 12px; padding: 12px; margin-bottom: 14px; font-size: 12px; }
+  .sum-item span { display: block; color: #64748b; font-size: 11px; }
+  .sum-item strong { font-size: 14px; }
   .qr-card { text-align: center; background: #090d16; border: 1px dashed #f59e0b; border-radius: 16px; padding: 16px; margin-bottom: 14px; }
-  .qr-card img { width: 180px; height: 180px; background: #fff; padding: 6px; border-radius: 12px; margin-bottom: 10px; }
+  .qr-card img { width: 190px; height: 190px; background: #fff; padding: 8px; border-radius: 14px; margin-bottom: 10px; display: inline-block; box-shadow: 0 4px 16px rgba(0,0,0,0.5); }
   .w-addr { font-family: monospace; font-size: 12px; color: #fbbf24; word-break: break-all; background: #111827; padding: 10px; border-radius: 10px; margin-bottom: 10px; }
   .copy-b { background: #1e293b; color: #fff; border: 1px solid #334155; padding: 9px 16px; border-radius: 10px; font-size: 12px; font-weight: 700; cursor: pointer; }
   .back-b { background: transparent; border: 1px solid #334155; color: #94a3b8; padding: 8px 14px; border-radius: 10px; font-size: 12px; cursor: pointer; margin-bottom: 12px; }
@@ -80,6 +84,7 @@
     <div class="live-badge"><span class="dot"></span> LIVE</div>
   </div>
 
+  <!-- PAGE 1 -->
   <div id="page1">
     <div class="sel-card">
       <div>
@@ -112,17 +117,22 @@
     </div>
   </div>
 
+  <!-- PAGE 2: SELECTED FUND + SCANNER QR + RECEIPT UPLOAD -->
   <div id="page2" style="display:none;">
     <button class="back-b" onclick="goPage1()">← Back to Edit Details</button>
     <div class="box">
-      <div class="sec-lbl">STEP 2: SEND USDT (TRC-20) & UPLOAD RECEIPT</div>
-      <div style="background:#090d16;padding:10px 12px;border-radius:10px;margin-bottom:12px;font-size:13px;display:flex;justify-content:space-between;">
-        <span>Send Exactly: <strong id="p2Usdt" style="color:#fbbf24;">0 USDT</strong></span>
-        <span>Payout: <strong id="p2Inr" style="color:#34d399;">₹0</strong></span>
+      <div class="sec-lbl">STEP 2: SCAN QR / SEND USDT (TRC-20)</div>
+
+      <div class="summary-grid">
+        <div class="sum-item"><span>Selected Fund</span><strong id="p2Fund" style="color:#fbbf24;">Gaming Funds</strong></div>
+        <div class="sum-item"><span>Applied Rate</span><strong id="p2Rate" style="color:#38bdf8;">₹104 / USDT</strong></div>
+        <div class="sum-item"><span>Deposit USDT</span><strong id="p2Usdt" style="color:#fff;">0 USDT</strong></div>
+        <div class="sum-item"><span>Total INR Payout</span><strong id="p2Inr" style="color:#34d399;">₹0.00</strong></div>
       </div>
 
       <div class="qr-card">
-        <img src="/my-qr.png" onerror="this.style.display='none'" alt="TRC-20 QR" />
+        <div style="font-size:11px;color:#fbbf24;font-weight:700;margin-bottom:8px;">SCAN TRC-20 QR CODE TO PAY</div>
+        <img id="qrDisplay" src="" alt="TRC-20 QR Code" />
         <div class="w-addr" id="walletBox">Loading TRC-20 Address...</div>
         <button class="copy-b" onclick="copyW()">📋 Copy TRC-20 Wallet Address</button>
       </div>
@@ -134,11 +144,12 @@
     </div>
   </div>
 
+  <!-- PAGE 3: FINAL TOKEN -->
   <div id="page3" style="display:none;">
     <div class="token-box">
       <div style="font-size:40px;">🎉</div>
       <h2 style="margin:6px 0;color:#34d399;">Order Submitted!</h2>
-      <p style="font-size:13px;color:#94a3b8;margin:0;">Your receipt has been sent to our desk & admin. Save your token number below:</p>
+      <p style="font-size:13px;color:#94a3b8;margin:0;">Your receipt & <strong id="p3Fund" style="color:#fbbf24;">Gaming Funds</strong> order have been sent to our desk. Save your token:</p>
       <div class="tok-num" id="finalToken">QL-000000</div>
       <p style="font-size:12px;color:#cbd5e1;">Estimated Payout: <strong id="finalInr" style="color:#34d399;">₹0.00</strong></p>
       <button class="next-btn" style="margin-top:12px;" onclick="location.reload()">➕ Place New Order</button>
@@ -151,7 +162,15 @@ if (window.Telegram && window.Telegram.WebApp) { window.Telegram.WebApp.expand()
 let rates = { gaming: 104, stock: 117, mix: 128, pure: 145 };
 let mins  = { gaming: 1000, stock: 1500, mix: 2000, pure: 2500 };
 let curFund = 'gaming';
+let walletAddr = 'TYourTrc20WalletAddressHere123456789';
 const labels = { gaming: 'Gaming Funds', stock: 'Stock Funds', mix: 'Mix Funds', pure: 'Pure Funds' };
+
+function setQrImage(addr) {
+  const img = document.getElementById('qrDisplay');
+  const autoQr = 'https://qrserver.com' + encodeURIComponent(addr);
+  img.onerror = function() { this.onerror = null; this.src = autoQr; };
+  img.src = '/my-qr.png?t=' + Date.now();
+}
 
 async function loadState() {
   try {
@@ -159,9 +178,11 @@ async function loadState() {
     const d = await r.json();
     rates = d.rates;
     mins = d.minLimits;
-    document.getElementById('walletBox').innerText = d.settings.wallet;
+    walletAddr = d.settings.wallet;
+    document.getElementById('walletBox').innerText = walletAddr;
     document.getElementById('supLink').href = d.settings.enquiryLink;
   } catch (e) {}
+  setQrImage(walletAddr);
   renderCards();
   validateForm();
 }
@@ -205,8 +226,11 @@ function validateForm() {
 
 function goPage2() {
   const u = parseFloat(document.getElementById('usdtAmt').value) || 0;
+  document.getElementById('p2Fund').innerText = labels[curFund];
+  document.getElementById('p2Rate').innerText = `₹${rates[curFund]} / USDT`;
   document.getElementById('p2Usdt').innerText = u + ' USDT';
   document.getElementById('p2Inr').innerText = document.getElementById('inrVal').innerText;
+  setQrImage(walletAddr);
   document.getElementById('page1').style.display = 'none';
   document.getElementById('page2').style.display = 'block';
   window.scrollTo(0, 0);
@@ -242,6 +266,7 @@ async function submitFinal() {
     const r = await fetch('/api/order', { method: 'POST', body: fd });
     const j = await r.json();
     if (j.ok) {
+      document.getElementById('p3Fund').innerText = labels[curFund];
       document.getElementById('finalToken').innerText = j.token;
       document.getElementById('finalInr').innerText = '₹' + Number(j.inr).toLocaleString('en-IN', { minimumFractionDigits: 2 });
       document.getElementById('page2').style.display = 'none';
