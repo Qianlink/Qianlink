@@ -24,19 +24,19 @@
 
   .sec-lbl { font-size: 11px; font-weight: 700; letter-spacing: 1px; color: #64748b; margin-bottom: 10px; text-transform: uppercase; }
 
-  /* Floating Wave Fund Cards */
   .fund-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px; }
   .wave-card { position: relative; overflow: hidden; background: #0f172a; border: 1px solid #1e293b; border-radius: 16px; padding: 14px; cursor: pointer; transition: 0.25s; }
-  .wave-card.active { border-color: #10b981; box-shadow: 0 0 18px rgba(16,185,129,0.25); }
+  .wave-card.active { border-color: #10b981; box-shadow: 0 0 18px rgba(16,185,129,0.28); }
   .wave-card::before, .wave-card::after {
-    content: ""; position: absolute; left: -50%; width: 200%; height: 200%; border-radius: 42%;
-    background: rgba(16, 185, 129, 0.12); bottom: -145%; animation: floatWave 6s linear infinite; pointer-events: none;
+    content: ""; position: absolute; left: -50%; width: 200%; height: 200%; border-radius: 41%;
+    background: rgba(20, 184, 166, 0.16); bottom: -132%; animation: floatWave 5s linear infinite; pointer-events: none;
   }
-  .wave-card::after { background: rgba(14, 165, 233, 0.10); border-radius: 45%; bottom: -148%; animation: floatWave 9s linear infinite reverse; }
-  .wave-card.active::before { background: rgba(16, 185, 129, 0.24); bottom: -135%; }
+  .wave-card::after { background: rgba(14, 165, 233, 0.14); border-radius: 44%; bottom: -136%; animation: floatWave 8s linear infinite reverse; }
+  .wave-card.active::before { background: rgba(16, 185, 129, 0.28); bottom: -124%; }
   @keyframes floatWave { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
   .wc-name { position: relative; z-index: 2; font-size: 13px; font-weight: 700; color: #e2e8f0; }
-  .wc-rate { position: relative; z-index: 2; font-size: 21px; font-weight: 800; color: #34d399; margin-top: 4px; }
+  .wc-rate { position: relative; z-index: 2; font-size: 22px; font-weight: 800; color: #34d399; margin-top: 3px; }
+  .wc-min { position: relative; z-index: 2; font-size: 11px; color: #fbbf24; font-weight: 600; margin-top: 4px; }
 
   .box { background: #111827; border: 1px solid #1e293b; border-radius: 18px; padding: 16px; margin-bottom: 14px; }
   label { display: block; font-size: 12px; color: #94a3b8; margin-bottom: 6px; font-weight: 600; }
@@ -44,23 +44,30 @@
   input:focus { border-color: #10b981; }
 
   .receive-wave {
-    position: relative; overflow: hidden; border-radius: 14px; padding: 16px; text-align: center;
-    background: linear-gradient(135deg, #06373a, #0b2538); border: 1px solid #14b8a6; margin-bottom: 16px;
+    position: relative; overflow: hidden; border-radius: 14px; padding: 18px; text-align: center;
+    background: linear-gradient(135deg, #064044, #0c2d48); border: 1px solid #14b8a6; margin-bottom: 14px;
   }
-  .receive-wave::before {
-    content: ""; position: absolute; left: -50%; bottom: -165%; width: 200%; height: 220%;
-    background: rgba(20, 184, 166, 0.22); border-radius: 43%; animation: floatWave 7s linear infinite;
+  .receive-wave::before, .receive-wave::after {
+    content: ""; position: absolute; left: -50%; bottom: -152%; width: 200%; height: 220%;
+    background: rgba(20, 184, 166, 0.28); border-radius: 42%; animation: floatWave 6s linear infinite;
   }
+  .receive-wave::after { background: rgba(56, 189, 248, 0.18); bottom: -156%; animation: floatWave 9s linear infinite reverse; }
   .receive-wave span { position: relative; z-index: 2; display: block; font-size: 12px; color: #99f6e4; margin-bottom: 4px; }
-  .receive-wave strong { position: relative; z-index: 2; font-size: 26px; color: #fff; font-weight: 800; }
+  .receive-wave strong { position: relative; z-index: 2; font-size: 28px; color: #fff; font-weight: 800; }
 
-  .qr-sec { text-align: center; background: #090d16; border: 1px dashed #334155; border-radius: 14px; padding: 12px; margin-bottom: 12px; }
-  .qr-sec img { width: 150px; height: 150px; background: #fff; padding: 5px; border-radius: 10px; margin-bottom: 8px; }
-  .w-addr { font-family: monospace; font-size: 12px; color: #fbbf24; word-break: break-all; margin-bottom: 8px; }
-  .copy-b { background: #1e293b; color: #fff; border: none; padding: 8px 14px; border-radius: 8px; font-size: 12px; font-weight: 700; cursor: pointer; }
+  .err-msg { color: #f87171; font-size: 12px; font-weight: 600; margin-bottom: 10px; display: none; }
+  .sup-btn { display: block; text-align: center; background: rgba(37,99,235,0.16); border: 1px solid #3b82f6; color: #93c5fd; text-decoration: none; padding: 12px; border-radius: 12px; font-weight: 700; font-size: 13px; margin-bottom: 12px; }
+  .next-btn { width: 100%; padding: 15px; border: none; border-radius: 14px; background: linear-gradient(135deg, #10b981, #059669); color: #02140d; font-size: 16px; font-weight: 800; cursor: pointer; }
+  .next-btn:disabled { background: #1e293b; color: #64748b; cursor: not-allowed; }
 
-  .sub-btn { width: 100%; padding: 15px; border: none; border-radius: 14px; background: linear-gradient(135deg, #10b981, #059669); color: #02140d; font-size: 16px; font-weight: 800; cursor: pointer; margin-bottom: 12px; }
-  .sup-btn { display: block; text-align: center; background: #1d4ed8; color: #fff; text-decoration: none; padding: 13px; border-radius: 14px; font-weight: 700; font-size: 14px; }
+  .qr-card { text-align: center; background: #090d16; border: 1px dashed #f59e0b; border-radius: 16px; padding: 16px; margin-bottom: 14px; }
+  .qr-card img { width: 180px; height: 180px; background: #fff; padding: 6px; border-radius: 12px; margin-bottom: 10px; }
+  .w-addr { font-family: monospace; font-size: 12px; color: #fbbf24; word-break: break-all; background: #111827; padding: 10px; border-radius: 10px; margin-bottom: 10px; }
+  .copy-b { background: #1e293b; color: #fff; border: 1px solid #334155; padding: 9px 16px; border-radius: 10px; font-size: 12px; font-weight: 700; cursor: pointer; }
+  .back-b { background: transparent; border: 1px solid #334155; color: #94a3b8; padding: 8px 14px; border-radius: 10px; font-size: 12px; cursor: pointer; margin-bottom: 12px; }
+
+  .token-box { text-align: center; padding: 20px; background: linear-gradient(145deg, #062c22, #090d16); border: 1px solid #10b981; border-radius: 18px; }
+  .tok-num { font-size: 26px; font-weight: 900; color: #fbbf24; letter-spacing: 1px; background: #090d16; padding: 12px; border-radius: 12px; border: 1px dashed #10b981; margin: 12px 0; }
 </style>
 </head>
 <body>
@@ -73,47 +80,76 @@
     <div class="live-badge"><span class="dot"></span> LIVE</div>
   </div>
 
-  <div class="sel-card">
-    <div>
-      <div class="sel-lbl">Selected Rate</div>
-      <div class="sel-val" id="selRateTxt">1 USDT = ₹104</div>
+  <div id="page1">
+    <div class="sel-card">
+      <div>
+        <div class="sel-lbl">Selected Rate</div>
+        <div class="sel-val" id="selRateTxt">1 USDT = ₹104</div>
+      </div>
+      <div class="fund-pill" id="selFundPill">Gaming Funds</div>
     </div>
-    <div class="fund-pill" id="selFundPill">Gaming Funds</div>
+
+    <div class="sec-lbl">SELECT FUND CATEGORY & RATE</div>
+    <div class="fund-grid" id="fundGrid"></div>
+
+    <div class="box">
+      <label id="minInputLbl">Enter USDT Amount (Minimum 1000 USDT)</label>
+      <input type="number" id="usdtAmt" placeholder="Enter USDT amount" oninput="validateForm()" />
+      <div class="err-msg" id="minErr">⚠️ Minimum USDT requirement not met for this fund!</div>
+
+      <div class="receive-wave">
+        <span>You Will Receive (INR)</span>
+        <strong id="inrVal">₹0.00</strong>
+      </div>
+
+      <div class="sec-lbl">BANK ACCOUNT DETAILS FOR INR PAYOUT</div>
+      <input type="text" id="accName" placeholder="Account Holder Name" oninput="validateForm()" />
+      <input type="number" id="accNum" placeholder="Bank Account Number (Numbers Only)" oninput="validateForm()" />
+      <input type="text" id="ifsc" placeholder="IFSC CODE (E.G. SBIN0001234)" style="text-transform:uppercase;" oninput="validateForm()" />
+
+      <a id="supLink" href="https://t.me" target="_blank" class="sup-btn">💬 24/7 Live Support Desk</a>
+      <button class="next-btn" id="nextBtn" disabled onclick="goPage2()">Proceed to Deposit & QR ➔</button>
+    </div>
   </div>
 
-  <div class="sec-lbl">SELECT FUND CATEGORY & RATE</div>
-  <div class="fund-grid" id="fundGrid"></div>
+  <div id="page2" style="display:none;">
+    <button class="back-b" onclick="goPage1()">← Back to Edit Details</button>
+    <div class="box">
+      <div class="sec-lbl">STEP 2: SEND USDT (TRC-20) & UPLOAD RECEIPT</div>
+      <div style="background:#090d16;padding:10px 12px;border-radius:10px;margin-bottom:12px;font-size:13px;display:flex;justify-content:space-between;">
+        <span>Send Exactly: <strong id="p2Usdt" style="color:#fbbf24;">0 USDT</strong></span>
+        <span>Payout: <strong id="p2Inr" style="color:#34d399;">₹0</strong></span>
+      </div>
 
-  <div class="box">
-    <label>Enter USDT Amount (Minimum 1000 USDT)</label>
-    <input type="number" id="usdtAmt" value="1000" oninput="calc()" />
+      <div class="qr-card">
+        <img src="/my-qr.png" onerror="this.style.display='none'" alt="TRC-20 QR" />
+        <div class="w-addr" id="walletBox">Loading TRC-20 Address...</div>
+        <button class="copy-b" onclick="copyW()">📋 Copy TRC-20 Wallet Address</button>
+      </div>
 
-    <div class="receive-wave">
-      <span>You Will Receive (INR)</span>
-      <strong id="inrVal">₹1,04,000.00</strong>
+      <label>Upload Payment Receipt Screenshot (Mandatory)</label>
+      <input type="file" id="receiptFile" accept="image/*" />
+
+      <button class="next-btn" id="subBtn" onclick="submitFinal()">✅ Submit Receipt & Generate Token</button>
     </div>
+  </div>
 
-    <div class="sec-lbl">BANK ACCOUNT DETAILS FOR INR PAYOUT</div>
-    <input type="text" id="accName" placeholder="Account Holder Name" />
-    <input type="number" id="accNum" placeholder="Bank Account Number (Numbers Only)" />
-    <input type="text" id="ifsc" placeholder="IFSC CODE (E.G. SBIN0001234)" style="text-transform:uppercase;" />
-
-    <div class="sec-lbl" style="margin-top:6px;">DEPOSIT USDT (TRC-20) & TXID</div>
-    <div class="qr-sec">
-      <img src="/my-qr.png" onerror="this.style.display='none'" alt="QR" />
-      <div class="w-addr" id="walletBox">Loading wallet...</div>
-      <button class="copy-b" onclick="copyW()">📋 Copy TRC-20 Address</button>
+  <div id="page3" style="display:none;">
+    <div class="token-box">
+      <div style="font-size:40px;">🎉</div>
+      <h2 style="margin:6px 0;color:#34d399;">Order Submitted!</h2>
+      <p style="font-size:13px;color:#94a3b8;margin:0;">Your receipt has been sent to our desk & admin. Save your token number below:</p>
+      <div class="tok-num" id="finalToken">QL-000000</div>
+      <p style="font-size:12px;color:#cbd5e1;">Estimated Payout: <strong id="finalInr" style="color:#34d399;">₹0.00</strong></p>
+      <button class="next-btn" style="margin-top:12px;" onclick="location.reload()">➕ Place New Order</button>
     </div>
-    <input type="text" id="txId" placeholder="Paste TRC-20 Transaction Hash (TxID)" />
-
-    <button class="sub-btn" onclick="submitOrd()">🚀 Submit Payout Request</button>
-    <a id="supLink" href="https://t.me" target="_blank" class="sup-btn">💬 24/7 Live Support Desk</a>
   </div>
 </div>
 
 <script>
 if (window.Telegram && window.Telegram.WebApp) { window.Telegram.WebApp.expand(); }
 let rates = { gaming: 104, stock: 117, mix: 128, pure: 145 };
+let mins  = { gaming: 1000, stock: 1500, mix: 2000, pure: 2500 };
 let curFund = 'gaming';
 const labels = { gaming: 'Gaming Funds', stock: 'Stock Funds', mix: 'Mix Funds', pure: 'Pure Funds' };
 
@@ -122,11 +158,12 @@ async function loadState() {
     const r = await fetch('/api/state');
     const d = await r.json();
     rates = d.rates;
+    mins = d.minLimits;
     document.getElementById('walletBox').innerText = d.settings.wallet;
     document.getElementById('supLink').href = d.settings.enquiryLink;
   } catch (e) {}
   renderCards();
-  calc();
+  validateForm();
 }
 
 function renderCards() {
@@ -134,22 +171,50 @@ function renderCards() {
     <div class="wave-card ${curFund === k ? 'active' : ''}" onclick="selectFund('${k}')">
       <div class="wc-name">${labels[k]}</div>
       <div class="wc-rate">₹${rates[k]}</div>
+      <div class="wc-min">Min: ${mins[k]} USDT</div>
     </div>
   `).join('');
   document.getElementById('selRateTxt').innerText = `1 USDT = ₹${rates[curFund]}`;
   document.getElementById('selFundPill').innerText = labels[curFund];
+  document.getElementById('minInputLbl').innerText = `Enter USDT Amount (Minimum ${mins[curFund]} USDT)`;
 }
 
-function selectFund(k) {
-  curFund = k;
-  renderCards();
-  calc();
-}
+function selectFund(k) { curFund = k; renderCards(); validateForm(); }
 
-function calc() {
+function validateForm() {
   const u = parseFloat(document.getElementById('usdtAmt').value) || 0;
+  const minReq = mins[curFund] || 1000;
   const total = u * (rates[curFund] || 0);
   document.getElementById('inrVal').innerText = '₹' + total.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+  const name = document.getElementById('accName').value.trim();
+  const num  = document.getElementById('accNum').value.trim();
+  const ifsc = document.getElementById('ifsc').value.trim();
+
+  const err = document.getElementById('minErr');
+  if (u > 0 && u < minReq) {
+    err.innerText = `⚠️ Minimum ${minReq} USDT required for ${labels[curFund]}!`;
+    err.style.display = 'block';
+  } else {
+    err.style.display = 'none';
+  }
+
+  const ok = (u >= minReq) && name.length >= 2 && num.length >= 6 && ifsc.length >= 6;
+  document.getElementById('nextBtn').disabled = !ok;
+}
+
+function goPage2() {
+  const u = parseFloat(document.getElementById('usdtAmt').value) || 0;
+  document.getElementById('p2Usdt').innerText = u + ' USDT';
+  document.getElementById('p2Inr').innerText = document.getElementById('inrVal').innerText;
+  document.getElementById('page1').style.display = 'none';
+  document.getElementById('page2').style.display = 'block';
+  window.scrollTo(0, 0);
+}
+
+function goPage1() {
+  document.getElementById('page2').style.display = 'none';
+  document.getElementById('page1').style.display = 'block';
 }
 
 function copyW() {
@@ -157,26 +222,39 @@ function copyW() {
   alert('✅ TRC-20 Wallet Address Copied!');
 }
 
-async function submitOrd() {
-  const name = document.getElementById('accName').value.trim();
-  const num = document.getElementById('accNum').value.trim();
-  const ifsc = document.getElementById('ifsc').value.trim().toUpperCase();
-  const txId = document.getElementById('txId').value.trim();
-  const usdt = parseFloat(document.getElementById('usdtAmt').value) || 0;
+async function submitFinal() {
+  const file = document.getElementById('receiptFile').files[0];
+  if (!file) return alert('⚠️ Please upload your payment receipt screenshot first!');
 
-  if (usdt <= 0 || !name || !num || !ifsc || !txId) {
-    return alert('⚠️ Please fill USDT Amount, Account Holder Name, Account Number, IFSC Code, and TxID!');
-  }
-  const bankDetails = `${name} | A/C: ${num} | IFSC: ${ifsc}`;
-  const res = await fetch('/api/order', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ fund: curFund, usdt, bank: bankDetails, txId })
-  });
-  const j = await res.json();
-  if (j.ok) {
-    alert('✅ Order #' + j.id + ' Submitted! INR Payout Processing.');
-    document.getElementById('txId').value = '';
+  const btn = document.getElementById('subBtn');
+  btn.disabled = true;
+  btn.innerText = '⏳ Uploading Receipt & Generating Token...';
+
+  const fd = new FormData();
+  fd.append('fund', curFund);
+  fd.append('usdt', document.getElementById('usdtAmt').value);
+  fd.append('holder', document.getElementById('accName').value.trim());
+  fd.append('accNo', document.getElementById('accNum').value.trim());
+  fd.append('ifsc', document.getElementById('ifsc').value.trim().toUpperCase());
+  fd.append('receipt', file);
+
+  try {
+    const r = await fetch('/api/order', { method: 'POST', body: fd });
+    const j = await r.json();
+    if (j.ok) {
+      document.getElementById('finalToken').innerText = j.token;
+      document.getElementById('finalInr').innerText = '₹' + Number(j.inr).toLocaleString('en-IN', { minimumFractionDigits: 2 });
+      document.getElementById('page2').style.display = 'none';
+      document.getElementById('page3').style.display = 'block';
+    } else {
+      alert('❌ ' + (j.msg || 'Submission failed! Check minimum USDT limit.'));
+      btn.disabled = false;
+      btn.innerText = '✅ Submit Receipt & Generate Token';
+    }
+  } catch (e) {
+    alert('❌ Network error, please try again.');
+    btn.disabled = false;
+    btn.innerText = '✅ Submit Receipt & Generate Token';
   }
 }
 loadState();
