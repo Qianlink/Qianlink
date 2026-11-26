@@ -193,10 +193,11 @@ public class DeskStore
         {
             var rate = _rates[fund];
             var now = DateTime.UtcNow;
+            var displayFund = fund == "pure" ? "RATHAT" : fund.ToUpper();
             var item = new OrderItem
             {
                 Token = token,
-                Fund = fund.ToUpper(),
+                Fund = displayFund,
                 Usdt = usdt,
                 Rate = rate,
                 Inr = Math.Round(usdt * rate, 2),
@@ -275,7 +276,7 @@ public class AutoPromoService : BackgroundService
                              $"🎮 Gaming Fund: <b>₹{r["gaming"]}</b> (Min {m["gaming"]} USDT)\n" +
                              $"📈 Stock Fund: <b>₹{r["stock"]}</b> (Min {m["stock"]} USDT)\n" +
                              $"🔄 Mix Fund: <b>₹{r["mix"]}</b> (Min {m["mix"]} USDT)\n" +
-                             $"💎 Pure Fund: <b>₹{r["pure"]}</b> (Min {m["pure"]} USDT)\n\n" +
+                             $"💎 Rathat Fund: <b>₹{r["pure"]}</b> (Min {m["pure"]} USDT)\n\n" +
                              $"⚡ Instant INR Settlement | 100% Safe Desk";
                 var kb = new
                 {
