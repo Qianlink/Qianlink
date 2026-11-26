@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>QianLink USDT ⇄ INR Desk</title>
+<script src="https://telegram.org"></script>
+<style>
+  body { margin:0; font-family:system-ui,-apple-system,sans-serif; background:#0b0e14; color:#f3f4f6; padding:16px; }
+  .wrap { max-width:480px; margin:0 auto; }
+  .card { background:#131720; border:1px solid #1f2937; border-radius:16px; padding:16px; margin-bottom:14px; }
+  .hdr { display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; }
+  .badge { background:#064e3b; color:#34d399; padding:4px 10px; border-radius:99px; font-size:12px; font-weight:700; }
+  .grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  .rate-box { background:#0b0e14; border:1px solid #1f2937; border-radius:12px; padding:12px; cursor:pointer; }
+  .rate-box.active { border-color:#10b981; background:#062c22; }
+  .rate-val { font-size:20px; font-weight:800; color:#10b981; margin-top:4px; }
+  input, select { width:100%; box-sizing:border-box; padding:12px; border-radius:10px; border:1px solid #374151; background:#0b0e14; color:#fff; margin-top:6px; margin-bottom:12px; font-size:15px; }
+  .btn { width:100%; padding:14px; border:none; border-radius:12px; background:#10b981; color:#000; font-weight:800; font-size:16px; cursor:pointer; }
+  .sup { display:block; text-align:center; background:#1d4ed8; color:#fff; text-decoration:none; padding:12px; border-radius:12px; font-weight:700; margin-bottom:14px; }
+  .qr { width:160px; height:160px; object-fit:contain; background:#fff; border-radius:12px; padding:6px; display:block; margin:10px auto; }
+  .wallet { background:#0b0e14; padding:10px; border-radius:8px; font-family:monospace; font-size:12px; word-break:break-all; text-align:center; border:1px dashed #374151; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="hdr">
+    <div><h2 style="margin:0;color:#10b981;">QianLink Desk</h2><small style="color:#9ca3af;">Official USDT ⇄ INR Exchange</small></div>
+    <span class="badge">● LIVE 24/7</span>
+  </div>
+
+  <div class="card">
+    <div style="font-size:13px;color:#9ca3af;margin-bottom:8px;">Select Fund Category (Live INR Rate)</div>
+    <div class="grid" id="rateGrid"></div>
+  </div>
+
+  <a id="supLink" href="https://t.me" target="_blank" class="sup">💬 24/7 Live Support Desk</a>
+
+  <div class="card">
+    <h3 style="margin-top:0;">1. Deposit USDT (TRC-20)</h3>
+    <img id="qrImg" class="qr" src="/my-qr.png" onerror="this.style.display='none'" />
+    <div class="wallet" id="walletAddr" onclick="copyWallet()">Loading wallet...</div>
+    <button onclick="copyWallet()" style="margin-top:8px;width:100%;padding:8px;border-radius:8px;border:1px solid #374151;background:#1f2937;color:#fff;cursor:pointer;">📋 Copy TRC-20 Address</button>
+  </div>
+
+  <div class="card">
+    <h3 style="margin-top:0;">2. Submit Exchange Order</h3>
+    <label>Selected Fund</label>
+    <select id="fundSel" onchange="calc()">
+      <option value="gaming">Gaming Fund</option>
+      <option value="stock">Stock Fund</option>
+      <option value="mix">Mix Fund</option>
+      <option value="pure">Pure Fund</option>
+    </select>
+    <label>USDT Amount</label>
+    <input type="number" id="usdtAmt" placeholder="e.g. 100" oninput="calc()" />
+    <div style="background:#062c22;padding:12px;border-radius:10px;margin-bottom:12px;text-align:center;">
+      You Receive: <strong id="inrOut" style="color:#34d399;font-size:18px;">₹0.00</strong>
+    </div>
+    <label>Your Bank Account + IFSC / UPI ID</label>
+    <input type="text" id="bankInfo" placeholder="Enter UPI or Acc No + IFSC" />
+    <label>USDT Transaction Hash (TxID)</label>
+    <input type="text" id="txId" placeholder="Paste TRC-20 TxID" />
+    <button class="btn" onclick="submitOrder()">🚀 Submit Order Now</button>
+  </div>
+</div>
+
+<script>
+let rates = { gaming:104, stock:117, mix:128, pure:145 };
+async function load() {
+  const res = await fetch('/api/state');
+  const d = await res.json();
+  rates = d.rates;
+  document.getElementById('walletAddr').innerText = d.settings.wallet;
+  document.getElementById('supLink').href = d.settings.enquiryLink;
+  renderRates();
+  calc();
+}
+function renderRates() {
+  const names = { gaming:'🎮 Gaming Fund', stock:'📈 Stock Fund', mix:'🔄 Mix Fund', pure:'💎 Pure Fund' };
+  const cur = document.getElementById('fundSel').value;
+  document.getElementById('rateGrid').innerHTML = Object.keys(names).map(k => `
+    <div class="rate-box ${cur===k?'active':''}" onclick="document.getElementById('fundSel').value='${k}';renderRates();calc();">
+      <div style="font-size:13px;">${names[k]}</div>
+      <div class="rate-val">₹${rates[k]}</div>
+    </div>`).join('');
+}
+function calc() {
+  const f = document.getElementById('fundSel').value;
+  const u = parseFloat(document.getElementById('usdtAmt').value) || 0;
+  document.getElementById('inrOut').innerText = '₹' + (u * (rates[f] || 0)).toFixed(2);
+}
+function copyWallet() {
+  navigator.clipboard.writeText(document.getElementById('walletAddr').innerText);
+  alert('✅ TRC-20 Address Copied!');
+}
+async function submitOrder() {
+  const body = {
+    fund: document.getElementById('fundSel').value,
+    usdt: parseFloat(document.getElementById('usdtAmt').value) || 0,
+    bank: document.getElementById('bankInfo').value.trim(),
+    txId: document.getElementById('txId').value.trim()
+  };
+  if (body.usdt <= 0 || !body.bank || !body.txId) return alert('⚠️ Please fill all fields!');
+  const r = await fetch('/api/order', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body) });
+  const j = await r.json();
+  if (j.ok) { alert('✅ Order #' + j.id + ' Submitted! INR payout processing.'); document.getElementById('usdtAmt').value=''; document.getElementById('txId').value=''; }
+}
+load();
+</script>
+</body>
+</html>
