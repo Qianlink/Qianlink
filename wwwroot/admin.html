@@ -129,13 +129,15 @@ async function saveSettings() {
 }
 
 async function uploadQr() {
-  const f = document.getElementById('qrFile').files;
-  if (!f) return alert('Select QR image first!');
+  const inp = document.getElementById('qrFile');
+  const f = inp.files ? inp.files : null;
+  if (!f) return alert('Select QR image (.jpg or .png) first!');
   const fd = new FormData();
   fd.append('password', adminPwd);
   fd.append('qr', f);
-  await fetch('/api/upload-qr', { method: 'POST', body: fd });
-  alert('✅ QR Uploaded!');
+  const r = await fetch('/api/upload-qr', { method: 'POST', body: fd });
+  if (r.ok) alert('✅ QR Image (.jpg/.png) Uploaded Successfully!');
+  else alert('❌ QR Upload failed!');
 }
 
 async function changePass() {
