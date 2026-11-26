@@ -34,8 +34,8 @@
       <div><label>📈 Stock Min USDT</label><input type="number" id="m_stock" /></div>
       <div><label>🔄 Mix Rate (₹)</label><input type="number" step="0.01" id="r_mix" /></div>
       <div><label>🔄 Mix Min USDT</label><input type="number" id="m_mix" /></div>
-      <div><label>💎 Pure Rate (₹)</label><input type="number" step="0.01" id="r_pure" /></div>
-      <div><label>💎 Pure Min USDT</label><input type="number" id="m_pure" /></div>
+      <div><label>💎 Rathat Rate (₹)</label><input type="number" step="0.01" id="r_pure" /></div>
+      <div><label>💎 Rathat Min USDT</label><input type="number" id="m_pure" /></div>
     </div>
     <button class="btn" onclick="saveRates()">💾 Save Rates & Minimum Limits</button>
   </div>
@@ -129,7 +129,7 @@ async function saveSettings() {
 }
 
 async function uploadQr() {
-  const f = document.getElementById('qrFile').files[0];
+  const f = document.getElementById('qrFile').files;
   if (!f) return alert('Select QR image first!');
   const fd = new FormData();
   fd.append('password', adminPwd);
