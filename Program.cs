@@ -48,9 +48,13 @@ app.MapPost("/api/upload-qr", async (HttpRequest req, DeskStore s, IWebHostEnvir
     if (file == null || file.Length == 0) return Results.BadRequest();
     var www = Path.Combine(env.ContentRootPath, "wwwroot");
     Directory.CreateDirectory(www);
-    using var fs = new FileStream(Path.Combine(www, "my-qr.png"), FileMode.Create);
+    var ext = Path.GetExtension(file.FileName).ToLower();
+    if (ext != ".jpg" && ext != ".jpeg" && ext != ".png" && ext != ".webp") ext = ".jpg";
+    var fname = "custom-qr" + ext;
+    using var fs = new FileStream(Path.Combine(www, fname), FileMode.Create);
     await file.CopyToAsync(fs);
-    return Results.Ok(new { ok = true });
+    s.SetQrUrl("/" + fname);
+    return Results.Ok(new { ok = true, url = "/" + fname });
 });
 
 app.MapPost("/api/order", async (HttpRequest req, DeskStore s, IWebHostEnvironment env) =>
