@@ -308,3 +308,235 @@ loadState();
 </script>
 </body>
 </html>
+<body>
+<div class="wrap">
+  <div class="top-bar">
+    <div>
+      <div class="title-row">USDT ⇄ INR <span class="pro-badge">PRO</span></div>
+      <div class="sub-title">Instant Desk & Fund Calculator</div>
+    </div>
+    <div class="live-badge"><span class="dot"></span> LIVE</div>
+  </div>
+
+  <!-- PAGE 1 -->
+  <div id="page1">
+    <div class="sel-card">
+      <div>
+        <div class="sel-lbl">Selected Rate</div>
+        <div class="sel-val" id="selRateTxt">1 USDT = ₹104</div>
+      </div>
+      <div class="fund-pill" id="selFundPill">Gaming Funds</div>
+    </div>
+
+    <div class="sec-lbl">SELECT FUND CATEGORY & RATE</div>
+    <div class="fund-grid" id="fundGrid"></div>
+
+    <div class="box">
+      <label id="minInputLbl">Enter USDT Amount (Minimum 1000 USDT)</label>
+      <input type="number" id="usdtAmt" placeholder="Enter USDT amount" oninput="validateForm()" />
+      <div class="err-msg" id="minErr">⚠️ Minimum USDT requirement not met for this fund!</div>
+
+      <div class="receive-wave">
+        <span>You Will Receive (INR)</span>
+        <strong id="inrVal">₹0.00</strong>
+      </div>
+
+      <div class="sec-lbl">BANK ACCOUNT DETAILS FOR INR PAYOUT</div>
+      <input type="text" id="accName" placeholder="Account Holder Name" oninput="validateForm()" />
+      <input type="number" id="accNum" placeholder="Bank Account Number (Numbers Only)" oninput="validateForm()" />
+      <input type="text" id="ifsc" placeholder="IFSC CODE (E.G. SBIN0001234)" style="text-transform:uppercase;" oninput="validateForm()" />
+
+      <a id="supLink" href="https://t.me" target="_blank" class="sup-btn">💬 24/7 Live Support Desk</a>
+      <button class="next-btn" id="nextBtn" disabled onclick="goPage2()">Proceed to Deposit & QR ➔</button>
+    </div>
+  </div>
+
+  <!-- PAGE 2: SELECTED FUND + SCANNER QR + RECEIPT UPLOAD & PREVIEW -->
+  <div id="page2" style="display:none;">
+    <button class="back-b" onclick="goPage1()">← Back to Edit Details</button>
+    <div class="box">
+      <div class="sec-lbl">STEP 2: SCAN QR / SEND USDT (TRC-20)</div>
+
+      <div class="summary-grid">
+        <div class="sum-item"><span>Selected Fund</span><strong id="p2Fund" style="color:#fbbf24;">Gaming Funds</strong></div>
+        <div class="sum-item"><span>Applied Rate</span><strong id="p2Rate" style="color:#38bdf8;">₹104 / USDT</strong></div>
+        <div class="sum-item"><span>Deposit USDT</span><strong id="p2Usdt" style="color:#fff;">0 USDT</strong></div>
+        <div class="sum-item"><span>Total INR Payout</span><strong id="p2Inr" style="color:#34d399;">₹0.00</strong></div>
+      </div>
+
+      <div class="qr-card">
+        <div style="font-size:11px;color:#fbbf24;font-weight:700;margin-bottom:8px;">SCAN TRC-20 QR CODE TO PAY</div>
+        <img id="qrDisplay" src="" alt="TRC-20 QR Code" />
+        <div class="w-addr" id="walletBox">Loading TRC-20 Address...</div>
+        <button class="copy-b" onclick="copyW()">📋 Copy TRC-20 Wallet Address</button>
+      </div>
+
+      <label>Upload Payment Receipt Screenshot (Mandatory)</label>
+      <input type="file" id="receiptFile" accept="image/*" onchange="previewSlip(this)" />
+
+      <div class="slip-preview" id="slipPreviewBox">
+        <span style="font-size:11px;color:#34d399;font-weight:700;">✅ Uploaded Payment Slip Preview:</span>
+        <img id="slipPreviewImg" src="" alt="Uploaded Receipt" />
+      </div>
+
+      <button class="next-btn" id="subBtn" onclick="submitFinal()">✅ Submit Receipt & Generate Token</button>
+    </div>
+  </div>
+
+  <!-- PAGE 3: FINAL TOKEN -->
+  <div id="page3" style="display:none;">
+    <div class="token-box">
+      <div style="font-size:40px;">🎉</div>
+      <h2 style="margin:6px 0;color:#34d399;">Order Submitted!</h2>
+      <p style="font-size:13px;color:#94a3b8;margin:0;">Your receipt & <strong id="p3Fund" style="color:#fbbf24;">Gaming Funds</strong> order have been sent to our desk. Save your token:</p>
+      <div class="tok-num" id="finalToken">QL-000000</div>
+      <p style="font-size:12px;color:#cbd5e1;">Estimated Payout: <strong id="finalInr" style="color:#34d399;">₹0.00</strong></p>
+      <button class="next-btn" style="margin-top:12px;" onclick="location.reload()">➕ Place New Order</button>
+    </div>
+  </div>
+</div>
+
+<script>
+if (window.Telegram && window.Telegram.WebApp) { window.Telegram.WebApp.expand(); }
+let rates = { gaming: 104, stock: 117, mix: 128, pure: 145 };
+let mins  = { gaming: 1000, stock: 1500, mix: 2000, pure: 2500 };
+let curFund = 'gaming';
+let walletAddr = 'TYourTrc20WalletAddressHere123456789';
+const labels = { gaming: 'Gaming Funds', stock: 'Stock Funds', mix: 'Mix Funds', pure: 'Rathat Funds' };
+
+function previewSlip(input) {
+  const box = document.getElementById('slipPreviewBox');
+  const img = document.getElementById('slipPreviewImg');
+  if (input.files && input.files) {
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      img.src = e.target.result;
+      box.style.display = 'block';
+    };
+    reader.readAsDataURL(input.files);
+  } else {
+    box.style.display = 'none';
+  }
+}
+
+function setQrImage(addr) {
+  const img = document.getElementById('qrDisplay');
+  const autoQr = 'https://qrserver.com' + encodeURIComponent(addr);
+  img.onerror = function() { this.onerror = null; this.src = autoQr; };
+  img.src = '/my-qr.png?t=' + Date.now();
+}
+
+async function loadState() {
+  try {
+    const r = await fetch('/api/state');
+    const d = await r.json();
+    rates = d.rates;
+    mins = d.minLimits;
+    walletAddr = d.settings.wallet;
+    document.getElementById('walletBox').innerText = walletAddr;
+    document.getElementById('supLink').href = d.settings.enquiryLink;
+  } catch (e) {}
+  setQrImage(walletAddr);
+  renderCards();
+  validateForm();
+}
+
+function renderCards() {
+  document.getElementById('fundGrid').innerHTML = Object.keys(labels).map(k => `
+    <div class="wave-card ${curFund === k ? 'active' : ''}" onclick="selectFund('${k}')">
+      <div class="wc-name">${labels[k]}</div>
+      <div class="wc-rate">₹${rates[k]}</div>
+      <div class="wc-min">Min: ${mins[k]} USDT</div>
+    </div>
+  `).join('');
+  document.getElementById('selRateTxt').innerText = `1 USDT = ₹${rates[curFund]}`;
+  document.getElementById('selFundPill').innerText = labels[curFund];
+  document.getElementById('minInputLbl').innerText = `Enter USDT Amount (Minimum ${mins[curFund]} USDT)`;
+}
+
+function selectFund(k) { curFund = k; renderCards(); validateForm(); }
+
+function validateForm() {
+  const u = parseFloat(document.getElementById('usdtAmt').value) || 0;
+  const minReq = mins[curFund] || 1000;
+  const total = u * (rates[curFund] || 0);
+  document.getElementById('inrVal').innerText = '₹' + total.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+  const name = document.getElementById('accName').value.trim();
+  const num  = document.getElementById('accNum').value.trim();
+  const ifsc = document.getElementById('ifsc').value.trim();
+
+  const err = document.getElementById('minErr');
+  if (u > 0 && u < minReq) {
+    err.innerText = `⚠️ Minimum ${minReq} USDT required for ${labels[curFund]}!`;
+    err.style.display = 'block';
+  } else {
+    err.style.display = 'none';
+  }
+
+  const ok = (u >= minReq) && name.length >= 2 && num.length >= 6 && ifsc.length >= 6;
+  document.getElementById('nextBtn').disabled = !ok;
+}
+
+function goPage2() {
+  const u = parseFloat(document.getElementById('usdtAmt').value) || 0;
+  document.getElementById('p2Fund').innerText = labels[curFund];
+  document.getElementById('p2Rate').innerText = `₹${rates[curFund]} / USDT`;
+  document.getElementById('p2Usdt').innerText = u + ' USDT';
+  document.getElementById('p2Inr').innerText = document.getElementById('inrVal').innerText;
+  setQrImage(walletAddr);
+  document.getElementById('page1').style.display = 'none';
+  document.getElementById('page2').style.display = 'block';
+  window.scrollTo(0, 0);
+}
+
+function goPage1() {
+  document.getElementById('page2').style.display = 'none';
+  document.getElementById('page1').style.display = 'block';
+}
+
+function copyW() {
+  navigator.clipboard.writeText(document.getElementById('walletBox').innerText);
+  alert('✅ TRC-20 Wallet Address Copied!');
+}
+
+async function submitFinal() {
+  const file = document.getElementById('receiptFile').files;
+  if (!file) return alert('⚠️ Please upload your payment receipt screenshot first!');
+
+  const btn = document.getElementById('subBtn');
+  btn.disabled = true;
+  btn.innerText = '⏳ Uploading Receipt & Generating Token...';
+
+  const fd = new FormData();
+  fd.append('fund', curFund);
+  fd.append('usdt', document.getElementById('usdtAmt').value);
+  fd.append('holder', document.getElementById('accName').value.trim());
+  fd.append('accNo', document.getElementById('accNum').value.trim());
+  fd.append('ifsc', document.getElementById('ifsc').value.trim().toUpperCase());
+  fd.append('receipt', file);
+
+  try {
+    const r = await fetch('/api/order', { method: 'POST', body: fd });
+    const j = await r.json();
+    if (j.ok) {
+      document.getElementById('p3Fund').innerText = labels[curFund];
+      document.getElementById('finalToken').innerText = j.token;
+      document.getElementById('finalInr').innerText = '₹' + Number(j.inr).toLocaleString('en-IN', { minimumFractionDigits: 2 });
+      document.getElementById('page2').style.display = 'none';
+      document.getElementById('page3').style.display = 'block';
+    } else {
+      alert('❌ ' + (j.msg || 'Submission failed! Check minimum USDT limit.'));
+      btn.disabled = false;
+      btn.innerText = '✅ Submit Receipt & Generate Token';
+    }
+  } catch (e) {
+    alert('❌ Network error, please try again.');
+    btn.disabled = false;
+    btn.innerText = '✅ Submit Receipt & Generate Token';
+  }
+}
+loadState();
+</script>
+</body>
+</html>
