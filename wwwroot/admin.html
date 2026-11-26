@@ -54,9 +54,10 @@
   </div>
 
   <div class="card">
-    <h3>3. Upload TRC-20 QR Code</h3>
+    <h3>3. Upload TRC-20 QR Code (.JPG / .PNG)</h3>
     <input type="file" id="qrFile" accept="image/*" />
     <button class="btn" onclick="uploadQr()">📤 Upload QR Image</button>
+    <div id="curQrPreview" style="text-align:center;margin-top:10px;"></div>
   </div>
 
   <div class="card">
@@ -70,7 +71,6 @@
     <div id="orderList">Loading...</div>
   </div>
 </div>
-
 <script>
 let adminPwd = sessionStorage.getItem('ql_pwd') || '';
 
@@ -95,6 +95,9 @@ async function authAndLoad() {
   document.getElementById('s_promo').value = d.settings.promoText;
   document.getElementById('s_ex').value = d.settings.exchangeLink;
   document.getElementById('s_enq').value = d.settings.enquiryLink;
+  if (d.qrUrl) {
+    document.getElementById('curQrPreview').innerHTML = `<img src="${d.qrUrl}?t=${Date.now()}" style="width:130px;height:130px;background:#fff;padding:5px;border-radius:10px;" />`;
+  }
 
   document.getElementById('orderList').innerHTML = d.orders.length ? d.orders.map(o => `
     <div class="ord">
@@ -130,14 +133,18 @@ async function saveSettings() {
 
 async function uploadQr() {
   const inp = document.getElementById('qrFile');
-  const f = inp.files ? inp.files : null;
+  const f = inp.files ? inp.files.item(0) : null;
   if (!f) return alert('Select QR image (.jpg or .png) first!');
   const fd = new FormData();
   fd.append('password', adminPwd);
   fd.append('qr', f);
   const r = await fetch('/api/upload-qr', { method: 'POST', body: fd });
-  if (r.ok) alert('✅ QR Image (.jpg/.png) Uploaded Successfully!');
-  else alert('❌ QR Upload failed!');
+  if (r.ok) {
+    alert('✅ QR Image Uploaded Successfully!');
+    authAndLoad();
+  } else {
+    alert('❌ Upload failed!');
+  }
 }
 
 async function changePass() {
