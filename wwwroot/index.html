@@ -58,21 +58,7 @@
 </style>
 </head>
 <body>
-<div class="wrap">
-  <!-- Top Bar & Closed Box -->
-  <div class="top-bar">...</div>
-  <div id="closedBox" style="display:none;">...</div>
-
-  <div id="mainApp">
-    <!-- Page 1: Rate & Bank Details -->
-    <div id="page1">...</div>
-    <!-- Page 2: QR & USDT Deposit -->
-    <div id="page2" style="display:none;">...</div>
-    <!-- Page 3: Order Confirmation -->
-    <div id="page3" style="display:none;">...</div>
-  </div>
-</div>
-</body>
+<div class="wrap" id="appRoot"></div>
 <script>
 if (window.Telegram && window.Telegram.WebApp) { window.Telegram.WebApp.expand(); }
 let rates = { gaming: 104, stock: 117, mix: 128, pure: 145 };
@@ -82,6 +68,126 @@ let walletAddr = 'TBMdnk1sTcAxSjb9b129cvkRs6eb9TQzgt';
 let customQrUrl = '';
 const labels = { gaming: 'Gaming Funds', stock: 'Stock Funds', mix: 'Mix Funds', pure: 'Rathat Funds' };
 
+function el(tag, cls, txt) {
+  const e = document.createElement(tag);
+  if (cls) e.className = cls;
+  if (txt !== undefined) e.innerText = txt;
+  return e;
+}
+
+function buildUI() {
+  const root = document.getElementById('appRoot');
+  root.innerHTML = '';
+
+  const top = el('div', 'top-bar');
+  const left = el('div');
+  const trow = el('div', 'title-row', 'USDT ⇄ INR ');
+  trow.appendChild(el('span', 'pro-badge', 'PRO'));
+  left.appendChild(trow);
+  left.appendChild(el('div', 'sub-title', 'Instant Desk & Fund Calculator'));
+  const live = el('div', 'live-badge');
+  live.appendChild(el('span', 'dot'));
+  live.appendChild(document.createTextNode(' LIVE'));
+  top.append(left, live);
+  root.appendChild(top);
+
+  const closed = el('div', 'box');
+  closed.id = 'closedBox';
+  closed.style.display = 'none';
+  closed.style.textAlign = 'center';
+  closed.appendChild(el('h2', '', '🚧 Desk Temporarily Closed'));
+  closed.appendChild(el('p', 'sub-title', 'Please check back later or contact support.'));
+  root.appendChild(closed);
+
+  const main = el('div'); main.id = 'mainApp';
+
+  const p1 = el('div'); p1.id = 'page1';
+  const sc = el('div', 'sel-card');
+  const scL = el('div');
+  scL.appendChild(el('div', 'sel-lbl', 'Selected Rate'));
+  const srv = el('div', 'sel-val', '1 USDT = ₹104'); srv.id = 'selRateTxt';
+  scL.appendChild(srv);
+  const pill = el('div', 'fund-pill', 'Gaming Funds'); pill.id = 'selFundPill';
+  sc.append(scL, pill);
+  p1.appendChild(sc);
+
+  p1.appendChild(el('div', 'sec-lbl', 'SELECT FUND CATEGORY & RATE'));
+  const fg = el('div', 'fund-grid'); fg.id = 'fundGrid';
+  p1.appendChild(fg);
+
+  const b1 = el('div', 'box');
+  const ml = el('label', '', 'Enter USDT Amount (Minimum 1000 USDT)'); ml.id = 'minInputLbl';
+  const uIn = el('input'); uIn.type = 'number'; uIn.id = 'usdtAmt'; uIn.placeholder = 'Enter USDT amount';
+  uIn.oninput = calcOnly;
+
+  const rw = el('div', 'receive-wave');
+  rw.appendChild(el('span', '', 'You Will Receive (INR)'));
+  const iv = el('strong', '', '₹0.00'); iv.id = 'inrVal';
+  rw.appendChild(iv);
+
+  const nIn = el('input'); nIn.type = 'text'; nIn.id = 'accName'; nIn.placeholder = 'Account Holder Name';
+  const aIn = el('input'); aIn.type = 'number'; aIn.id = 'accNum'; aIn.placeholder = 'Bank Account Number (Numbers Only)';
+  const iIn = el('input'); iIn.type = 'text'; iIn.id = 'ifsc'; iIn.placeholder = 'IFSC CODE (E.G. SBIN0001234)'; iIn.style.textTransform = 'uppercase';
+
+  const sup = el('a', 'sup-btn', '💬 24/7 Live Support Desk'); sup.id = 'supLink'; sup.href = 'https://t.me'; sup.target = '_blank';
+  const nb = el('button', 'next-btn', 'Proceed to Deposit & QR ➔'); nb.type = 'button'; nb.onclick = tryProceed;
+
+  b1.append(ml, uIn, rw, el('div', 'sec-lbl', 'BANK ACCOUNT DETAILS FOR INR PAYOUT'), nIn, aIn, iIn, sup, nb);
+  p1.appendChild(b1);
+
+  const p2 = el('div'); p2.id = 'page2'; p2.style.display = 'none';
+  const bk = el('button', 'back-b', '← Back to Edit Details'); bk.type = 'button'; bk.onclick = goPage1;
+  p2.appendChild(bk);
+
+  const b2 = el('div', 'box');
+  b2.appendChild(el('div', 'sec-lbl', 'STEP 2: SCAN QR / SEND USDT (TRC-20)'));
+  const sg = el('div', 'summary-grid');
+  [['Selected Fund','p2Fund','#fbbf24'],['Applied Rate','p2Rate','#38bdf8'],['Deposit USDT','p2Usdt','#fff'],['Total INR Payout','p2Inr','#34d399']].forEach(([t,id,col]) => {
+    const it = el('div', 'sum-item');
+    it.appendChild(el('span', '', t));
+    const st = el('strong'); st.id = id; st.style.color = col;
+    it.appendChild(st);
+    sg.appendChild(it);
+  });
+  b2.appendChild(sg);
+
+  const qc = el('div', 'qr-card');
+  const qt = el('div', '', 'SCAN TRC-20 QR CODE TO PAY'); qt.style.cssText = 'font-size:11px;color:#fbbf24;font-weight:700;margin-bottom:8px;';
+  const qw = el('div', 'qr-box-wrap'); qw.id = 'qrContainer';
+  const wa = el('div', 'w-addr', 'Loading...'); wa.id = 'walletBox';
+  const cb = el('button', 'copy-b', '📋 Copy TRC-20 Wallet Address'); cb.type = 'button'; cb.onclick = copyW;
+  qc.append(qt, qw, wa, cb);
+  b2.appendChild(qc);
+
+  b2.appendChild(el('label', '', 'Upload Payment Receipt Screenshot (Mandatory)'));
+  const fi = el('input'); fi.type = 'file'; fi.id = 'receiptFile'; fi.accept = 'image/*';
+  fi.onchange = function() { previewSlip(this); };
+  b2.appendChild(fi);
+
+  const sp = el('div', 'slip-preview'); sp.id = 'slipPreviewBox';
+  const spt = el('span', '', '✅ Uploaded Payment Slip Preview:'); spt.style.cssText = 'font-size:11px;color:#34d399;font-weight:700;';
+  const spi = el('img'); spi.id = 'slipPreviewImg';
+  sp.append(spt, spi);
+  b2.appendChild(sp);
+
+  const sb = el('button', 'next-btn', '✅ Submit Receipt & Generate Token'); sb.type = 'button'; sb.id = 'subBtn'; sb.onclick = submitFinal;
+  b2.appendChild(sb);
+  p2.appendChild(b2);
+
+  const p3 = el('div'); p3.id = 'page3'; p3.style.display = 'none';
+  const tb = el('div', 'token-box');
+  tb.appendChild(el('h2', '', '🎉 Order Submitted!'));
+  const tn = el('div', 'tok-num', 'QL-000000'); tn.id = 'finalToken';
+  const fiTxt = el('p', '', 'Estimated Payout: ');
+  const fiVal = el('strong', '', '₹0.00'); fiVal.id = 'finalInr'; fiVal.style.color = '#34d399';
+  fiTxt.appendChild(fiVal);
+  const rb = el('button', 'next-btn', '➕ Place New Order'); rb.type = 'button'; rb.onclick = () => location.reload();
+  tb.append(tn, fiTxt, rb);
+  p3.appendChild(tb);
+
+  main.append(p1, p2, p3);
+  root.appendChild(main);
+}
 function previewSlip(input) {
   const box = document.getElementById('slipPreviewBox');
   const img = document.getElementById('slipPreviewImg');
@@ -103,18 +209,19 @@ function renderQrBox(addr) {
 }
 
 async function loadState() {
+  buildUI();
   renderCards();
   try {
     const r = await fetch('/api/state');
     const d = await r.json();
     if (d.isOpen === false) {
-      if (document.getElementById('closedBox')) document.getElementById('closedBox').style.display = 'block';
-      if (document.getElementById('mainApp')) document.getElementById('mainApp').style.display = 'none';
+      document.getElementById('closedBox').style.display = 'block';
+      document.getElementById('mainApp').style.display = 'none';
       return;
     }
     rates = d.rates; mins = d.minLimits; walletAddr = d.settings.wallet; customQrUrl = d.qrUrl || '';
-    if (document.getElementById('walletBox')) document.getElementById('walletBox').innerText = walletAddr;
-    if (document.getElementById('supLink')) document.getElementById('supLink').href = d.settings.enquiryLink;
+    document.getElementById('walletBox').innerText = walletAddr;
+    document.getElementById('supLink').href = d.settings.enquiryLink;
   } catch (e) {}
   renderQrBox(walletAddr); renderCards(); calcOnly();
 }
@@ -122,18 +229,17 @@ async function loadState() {
 function renderCards() {
   const grid = document.getElementById('fundGrid');
   if (!grid) return;
-  grid.innerHTML = Object.keys(labels).map(k => `
-    <div class="wave-card ${curFund === k ? 'active' : ''}" onclick="selectFund('${k}')">
-      <div class="wc-name">${labels[k]}</div>
-      <div class="wc-rate">₹${rates[k]}</div>
-      <div class="wc-min">Min: ${mins[k]} USDT</div>
-    </div>`).join('');
-  document.getElementById('selRateTxt').innerText = `1 USDT = ₹${rates[curFund]}`;
+  grid.innerHTML = '';
+  Object.keys(labels).forEach(k => {
+    const c = el('div', 'wave-card' + (curFund === k ? ' active' : ''));
+    c.onclick = () => { curFund = k; renderCards(); calcOnly(); };
+    c.append(el('div', 'wc-name', labels[k]), el('div', 'wc-rate', '₹' + rates[k]), el('div', 'wc-min', 'Min: ' + mins[k] + ' USDT'));
+    grid.appendChild(c);
+  });
+  document.getElementById('selRateTxt').innerText = '1 USDT = ₹' + rates[curFund];
   document.getElementById('selFundPill').innerText = labels[curFund];
-  document.getElementById('minInputLbl').innerText = `Enter USDT Amount (Minimum ${mins[curFund]} USDT)`;
+  document.getElementById('minInputLbl').innerText = 'Enter USDT Amount (Minimum ' + mins[curFund] + ' USDT)';
 }
-
-function selectFund(k) { curFund = k; renderCards(); calcOnly(); }
 
 function calcOnly() {
   const u = parseFloat(document.getElementById('usdtAmt').value) || 0;
@@ -146,10 +252,10 @@ function tryProceed() {
   const name = document.getElementById('accName').value.trim();
   const num  = document.getElementById('accNum').value.trim();
   const ifsc = document.getElementById('ifsc').value.trim();
-  if (u < minReq) return alert(`⚠️ Minimum ${minReq} USDT required for ${labels[curFund]}!`);
+  if (u < minReq) return alert('⚠️ Minimum ' + minReq + ' USDT required for ' + labels[curFund] + '!');
   if (!name || !num || !ifsc) return alert('⚠️ Please fill Account Holder Name, Account Number, and IFSC Code!');
   document.getElementById('p2Fund').innerText = labels[curFund];
-  document.getElementById('p2Rate').innerText = `₹${rates[curFund]} / USDT`;
+  document.getElementById('p2Rate').innerText = '₹' + rates[curFund] + ' / USDT';
   document.getElementById('p2Usdt').innerText = u + ' USDT';
   document.getElementById('p2Inr').innerText = document.getElementById('inrVal').innerText;
   renderQrBox(walletAddr);
@@ -177,7 +283,6 @@ async function submitFinal() {
     const r = await fetch('/api/order', { method: 'POST', body: fd });
     const j = await r.json();
     if (j.ok) {
-      document.getElementById('p3Fund').innerText = labels[curFund];
       document.getElementById('finalToken').innerText = j.token;
       document.getElementById('finalInr').innerText = '₹' + Number(j.inr).toLocaleString('en-IN', { minimumFractionDigits: 2 });
       document.getElementById('page2').style.display = 'none'; document.getElementById('page3').style.display = 'block';
