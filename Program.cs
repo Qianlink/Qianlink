@@ -1,3 +1,4 @@
+using System.Net.Http.Headers;
 using System.Text.Json;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -8,49 +9,94 @@ var app = builder.Build();
 app.UseDefaultFiles();
 app.UseStaticFiles();
 
-app.MapGet("/api/state", (DeskStore s) => Results.Ok(s.GetState()));
+app.MapGet("/api/state", (DeskStore s) => Results.Ok(s.GetPublicState()));
 
-app.MapPost("/api/rates", (DeskStore s, Dictionary<string, decimal> r) =>
+app.MapPost("/api/admin/login", (DeskStore s, PassReq req) =>
+    s.CheckPassword(req.Password) ? Results.Ok(new { ok = true }) : Results.Unauthorized());
+
+app.MapPost("/api/admin/password", (DeskStore s, ChangePassReq req) =>
 {
-    s.UpdateRates(r);
+    if (!s.CheckPassword(req.OldPassword) || string.IsNullOrWhiteSpace(req.NewPassword))
+        return Results.BadRequest(new { ok = false });
+    s.UpdatePassword(req.NewPassword.Trim());
     return Results.Ok(new { ok = true });
 });
 
-app.MapPost("/api/settings", (DeskStore s, AppSettings cfg) =>
+app.MapPost("/api/admin/state", (DeskStore s, PassReq req) =>
+    s.CheckPassword(req.Password) ? Results.Ok(s.GetAdminState()) : Results.Unauthorized());
+
+app.MapPost("/api/rates", (DeskStore s, RatesUpdateReq req) =>
 {
-    s.UpdateSettings(cfg);
+    if (!s.CheckPassword(req.Password)) return Results.Unauthorized();
+    s.UpdateRatesAndMins(req.Rates, req.MinLimits);
     return Results.Ok(new { ok = true });
 });
 
-app.MapPost("/api/upload-qr", async (HttpRequest req, IWebHostEnvironment env) =>
+app.MapPost("/api/settings", (DeskStore s, SettingsUpdateReq req) =>
+{
+    if (!s.CheckPassword(req.Password)) return Results.Unauthorized();
+    s.UpdateSettings(req.Settings);
+    return Results.Ok(new { ok = true });
+});
+
+app.MapPost("/api/upload-qr", async (HttpRequest req, DeskStore s, IWebHostEnvironment env) =>
 {
     if (!req.HasFormContentType) return Results.BadRequest();
     var form = await req.ReadFormAsync();
+    if (!s.CheckPassword(form["password"].ToString())) return Results.Unauthorized();
     var file = form.Files.GetFile("qr");
     if (file == null || file.Length == 0) return Results.BadRequest();
     var www = Path.Combine(env.ContentRootPath, "wwwroot");
     Directory.CreateDirectory(www);
-    var path = Path.Combine(www, "my-qr.png");
-    using var fs = new FileStream(path, FileMode.Create);
+    using var fs = new FileStream(Path.Combine(www, "my-qr.png"), FileMode.Create);
     await file.CopyToAsync(fs);
     return Results.Ok(new { ok = true });
 });
 
-app.MapPost("/api/order", async (DeskStore s, OrderReq o) =>
+app.MapPost("/api/order", async (HttpRequest req, DeskStore s, IWebHostEnvironment env) =>
 {
-    var ord = s.AddOrder(o);
-    await s.NotifyTelegram($"🔔 <b>NEW ORDER #{ord.Id}</b>\n\n• Fund: <b>{ord.Fund}</b>\n• USDT: <b>{ord.Usdt} USDT</b>\n• Rate: ₹{ord.Rate}\n• Total INR: <b>₹{ord.Inr}</b>\n• Bank/UPI: <code>{ord.Bank}</code>\n• TxID: <code>{ord.TxId}</code>");
-    return Results.Ok(new { ok = true, id = ord.Id });
+    if (!req.HasFormContentType) return Results.BadRequest();
+    var form = await req.ReadFormAsync();
+    var fund = form["fund"].ToString().ToLower();
+    decimal.TryParse(form["usdt"].ToString(), out var usdt);
+    var holder = form["holder"].ToString().Trim();
+    var accNo = form["accNo"].ToString().Trim();
+    var ifsc = form["ifsc"].ToString().Trim().ToUpper();
+    var receipt = form.Files.GetFile("receipt");
+
+    if (receipt == null || receipt.Length == 0 || !s.ValidateOrder(fund, usdt, holder, accNo, ifsc))
+        return Results.BadRequest(new { ok = false, msg = "Invalid order or minimum USDT condition not met." });
+
+    var recDir = Path.Combine(env.ContentRootPath, "wwwroot", "receipts");
+    Directory.CreateDirectory(recDir);
+    var token = "QL-" + Random.Shared.Next(100000, 999999);
+    var ext = Path.GetExtension(receipt.FileName);
+    if (string.IsNullOrWhiteSpace(ext)) ext = ".jpg";
+    var fileName = $"{token}{ext}";
+    var fullPath = Path.Combine(recDir, fileName);
+
+    using (var fs = new FileStream(fullPath, FileMode.Create))
+        await receipt.CopyToAsync(fs);
+
+    var ord = s.AddOrder(token, fund, usdt, holder, accNo, ifsc, $"/receipts/{fileName}", fullPath);
+    await s.NotifyTelegramWithReceipt(ord, fullPath);
+    return Results.Ok(new { ok = true, token = ord.Token, inr = ord.Inr });
 });
 
 app.MapPost("/api/order-status", (DeskStore s, StatusReq req) =>
 {
-    s.SetStatus(req.Id, req.Status);
+    if (!s.CheckPassword(req.Password)) return Results.Unauthorized();
+    s.SetStatus(req.Token, req.Status);
     return Results.Ok(new { ok = true });
 });
 
 var port = Environment.GetEnvironmentVariable("PORT") ?? "10000";
 app.Run($"http://0.0.0:{port}");
+public record PassReq(string Password);
+public record ChangePassReq(string OldPassword, string NewPassword);
+public record RatesUpdateReq(string Password, Dictionary<string, decimal> Rates, Dictionary<string, decimal> MinLimits);
+public record SettingsUpdateReq(string Password, AppSettings Settings);
+public record StatusReq(string Password, string Token, string Status);
 
 public class AppSettings
 {
@@ -62,19 +108,20 @@ public class AppSettings
 
 public class OrderItem
 {
-    public string Id { get; set; } = "";
+    public string Token { get; set; } = "";
     public string Fund { get; set; } = "";
     public decimal Usdt { get; set; }
     public decimal Rate { get; set; }
     public decimal Inr { get; set; }
-    public string Bank { get; set; } = "";
-    public string TxId { get; set; } = "";
+    public string Holder { get; set; } = "";
+    public string AccNo { get; set; } = "";
+    public string Ifsc { get; set; } = "";
+    public string ReceiptUrl { get; set; } = "";
+    public string FilePath { get; set; } = "";
     public string Status { get; set; } = "Pending";
-    public string Time { get; set; } = "";
+    public DateTime CreatedUtc { get; set; }
+    public string TimeIst { get; set; } = "";
 }
-
-public record OrderReq(string Fund, decimal Usdt, string Bank, string TxId);
-public record StatusReq(string Id, string Status);
 
 public class DeskStore
 {
@@ -83,77 +130,124 @@ public class DeskStore
     public string PromoTarget => "8956956503";
 
     private readonly object _lock = new();
-    private Dictionary<string, decimal> _rates = new()
-    {
-        ["gaming"] = 104m,
-        ["stock"] = 117m,
-        ["mix"] = 128m,
-        ["pure"] = 145m
-    };
+    private string _adminPass = "SAMAR@0219";
+    private Dictionary<string, decimal> _rates = new() { ["gaming"] = 104m, ["stock"] = 117m, ["mix"] = 128m, ["pure"] = 145m };
+    private Dictionary<string, decimal> _mins = new() { ["gaming"] = 1000m, ["stock"] = 1500m, ["mix"] = 2000m, ["pure"] = 2500m };
     public AppSettings Settings { get; private set; } = new();
     private List<OrderItem> _orders = new();
 
-    public object GetState()
+    public bool CheckPassword(string p) { lock (_lock) return p == _adminPass; }
+    public void UpdatePassword(string np) { lock (_lock) _adminPass = np; }
+
+    public void CleanupOldRecords()
     {
-        lock (_lock) return new { rates = _rates, settings = Settings, orders = _orders };
+        lock (_lock)
+        {
+            var cutoff = DateTime.UtcNow.AddDays(-3);
+            var expired = _orders.Where(o => o.CreatedUtc < cutoff).ToList();
+            foreach (var o in expired)
+            {
+                try { if (!string.IsNullOrEmpty(o.FilePath) && File.Exists(o.FilePath)) File.Delete(o.FilePath); } catch { }
+            }
+            _orders.RemoveAll(o => o.CreatedUtc < cutoff);
+        }
     }
 
-    public void UpdateRates(Dictionary<string, decimal> r)
+    public object GetPublicState()
+    {
+        CleanupOldRecords();
+        lock (_lock) return new { rates = _rates, minLimits = _mins, settings = Settings };
+    }
+
+    public object GetAdminState()
+    {
+        CleanupOldRecords();
+        lock (_lock) return new { rates = _rates, minLimits = _mins, settings = Settings, orders = _orders };
+    }
+
+    public void UpdateRatesAndMins(Dictionary<string, decimal> r, Dictionary<string, decimal> m)
     {
         lock (_lock)
         {
             foreach (var kv in r) if (_rates.ContainsKey(kv.Key)) _rates[kv.Key] = kv.Value;
+            foreach (var kv in m) if (_mins.ContainsKey(kv.Key)) _mins[kv.Key] = kv.Value;
         }
     }
 
-    public void UpdateSettings(AppSettings cfg)
-    {
-        lock (_lock) Settings = cfg;
-    }
+    public void UpdateSettings(AppSettings cfg) { lock (_lock) Settings = cfg; }
 
-    public OrderItem AddOrder(OrderReq o)
+    public bool ValidateOrder(string fund, decimal usdt, string holder, string accNo, string ifsc)
     {
         lock (_lock)
         {
-            var rate = _rates.TryGetValue(o.Fund.ToLower(), out var val) ? val : 104m;
+            if (!_rates.ContainsKey(fund) || !_mins.ContainsKey(fund)) return false;
+            if (usdt < _mins[fund]) return false;
+            return !string.IsNullOrWhiteSpace(holder) && !string.IsNullOrWhiteSpace(accNo) && !string.IsNullOrWhiteSpace(ifsc);
+        }
+    }
+
+    public OrderItem AddOrder(string token, string fund, decimal usdt, string holder, string accNo, string ifsc, string recUrl, string filePath)
+    {
+        CleanupOldRecords();
+        lock (_lock)
+        {
+            var rate = _rates[fund];
+            var now = DateTime.UtcNow;
             var item = new OrderItem
             {
-                Id = Random.Shared.Next(10000, 99999).ToString(),
-                Fund = o.Fund.ToUpper(),
-                Usdt = o.Usdt,
+                Token = token,
+                Fund = fund.ToUpper(),
+                Usdt = usdt,
                 Rate = rate,
-                Inr = Math.Round(o.Usdt * rate, 2),
-                Bank = o.Bank,
-                TxId = o.TxId,
+                Inr = Math.Round(usdt * rate, 2),
+                Holder = holder,
+                AccNo = accNo,
+                Ifsc = ifsc,
+                ReceiptUrl = recUrl,
+                FilePath = filePath,
                 Status = "Pending",
-                Time = DateTime.UtcNow.AddHours(5.5).ToString("dd MMM HH:mm")
+                CreatedUtc = now,
+                TimeIst = now.AddHours(5.5).ToString("dd MMM yyyy, hh:mm tt")
             };
             _orders.Insert(0, item);
             return item;
         }
     }
 
-    public void SetStatus(string id, string st)
+    public void SetStatus(string token, string st)
     {
         lock (_lock)
         {
-            var x = _orders.FirstOrDefault(i => i.Id == id);
+            var x = _orders.FirstOrDefault(i => i.Token == token);
             if (x != null) x.Status = st;
         }
     }
 
-    public async Task NotifyTelegram(string html)
+    public async Task NotifyTelegramWithReceipt(OrderItem o, string filePath)
     {
         try
         {
             using var c = new HttpClient();
-            var form = new FormUrlEncodedContent(new[]
-            {
-                new KeyValuePair<string, string>("chat_id", AdminChatId),
-                new KeyValuePair<string, string>("text", html),
-                new KeyValuePair<string, string>("parse_mode", "HTML")
-            });
-            await c.PostAsync($"https://telegram.org{BotToken}/sendMessage", form);
+            string caption = $"🔔 <b>NEW DEPOSIT ORDER ({o.Token})</b>\n\n" +
+                             $"📂 Fund: <b>{o.Fund} FUNDS</b>\n" +
+                             $"💵 USDT: <b>{o.Usdt} USDT</b> @ ₹{o.Rate}\n" +
+                             $"💰 Total INR: <b>₹{o.Inr:N2}</b>\n\n" +
+                             $"🏦 <b>Bank Payout Details:</b>\n" +
+                             $"• Name: <code>{o.Holder}</code>\n" +
+                             $"• A/C No: <code>{o.AccNo}</code>\n" +
+                             $"• IFSC: <code>{o.Ifsc}</code>\n\n" +
+                             $"🕒 Time: {o.TimeIst}";
+
+            using var mp = new MultipartFormDataContent();
+            mp.Add(new StringContent(AdminChatId), "chat_id");
+            mp.Add(new StringContent(caption), "caption");
+            mp.Add(new StringContent("HTML"), "parse_mode");
+            var fileBytes = await File.ReadAllBytesAsync(filePath);
+            var fileContent = new ByteArrayContent(fileBytes);
+            fileContent.Headers.ContentType = MediaTypeHeaderValue.Parse("image/jpeg");
+            mp.Add(fileContent, "photo", Path.GetFileName(filePath));
+
+            await c.PostAsync($"https://telegram.org{BotToken}/sendPhoto", mp);
         }
         catch { }
     }
@@ -172,14 +266,16 @@ public class AutoPromoService : BackgroundService
         {
             try
             {
-                dynamic st = _store.GetState();
+                _store.CleanupOldRecords();
+                dynamic st = _store.GetPublicState();
                 Dictionary<string, decimal> r = st.rates;
+                Dictionary<string, decimal> m = st.minLimits;
                 AppSettings cfg = st.settings;
                 string msg = $"🔥 <b>QIANLINK LIVE USDT ⇄ INR DESK</b>\n\n{cfg.PromoText}\n\n" +
-                             $"🎮 Gaming Fund: <b>₹{r["gaming"]}/USDT</b>\n" +
-                             $"📈 Stock Fund: <b>₹{r["stock"]}/USDT</b>\n" +
-                             $"🔄 Mix Fund: <b>₹{r["mix"]}/USDT</b>\n" +
-                             $"💎 Pure Fund: <b>₹{r["pure"]}/USDT</b>\n\n" +
+                             $"🎮 Gaming Fund: <b>₹{r["gaming"]}</b> (Min {m["gaming"]} USDT)\n" +
+                             $"📈 Stock Fund: <b>₹{r["stock"]}</b> (Min {m["stock"]} USDT)\n" +
+                             $"🔄 Mix Fund: <b>₹{r["mix"]}</b> (Min {m["mix"]} USDT)\n" +
+                             $"💎 Pure Fund: <b>₹{r["pure"]}</b> (Min {m["pure"]} USDT)\n\n" +
                              $"⚡ Instant INR Settlement | 100% Safe Desk";
                 var kb = new
                 {
@@ -196,10 +292,9 @@ public class AutoPromoService : BackgroundService
                     new KeyValuePair<string, string>("parse_mode", "HTML"),
                     new KeyValuePair<string, string>("reply_markup", JsonSerializer.Serialize(kb))
                 });
-                var resp = await c.PostAsync($"https://telegram.org{_store.BotToken}/sendMessage", form, stoppingToken);
-                Console.WriteLine($"AUTO PROMO STATUS: {resp.StatusCode}");
+                await c.PostAsync($"https://telegram.org{_store.BotToken}/sendMessage", form, stoppingToken);
             }
-            catch (Exception ex) { Console.WriteLine($"AUTO PROMO ERR: {ex.Message}"); }
+            catch { }
             await Task.Delay(TimeSpan.FromMinutes(20), stoppingToken);
         }
     }
