@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-<title>USDT ⇄ INR PRO — Instant Desk</title>
+<title>QIANLINK — USDT ⇄ INR PRO Desk</title>
 <script src="https://telegram.org"></script>
 <script src="https://cloudflare.com"></script>
 <style>
@@ -11,6 +11,7 @@
   body { margin: 0; background: #090d16; color: #f1f5f9; padding: 14px; min-height: 100vh; }
   .wrap { max-width: 450px; margin: 0 auto; padding-bottom: 30px; }
   .top-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
+  .brand-name { font-size: 13px; font-weight: 900; letter-spacing: 2.5px; color: #fbbf24; margin-bottom: 2px; text-transform: uppercase; }
   .title-row { display: flex; align-items: center; gap: 8px; font-size: 20px; font-weight: 800; color: #fff; }
   .pro-badge { background: linear-gradient(135deg, #f59e0b, #d97706); color: #000; font-size: 11px; font-weight: 900; padding: 2px 7px; border-radius: 6px; }
   .sub-title { font-size: 12px; color: #64748b; margin-top: 2px; }
@@ -55,6 +56,12 @@
   .slip-preview img { max-width: 100%; max-height: 240px; border-radius: 8px; display: block; margin: 6px auto 0; }
   .token-box { text-align: center; padding: 20px; background: linear-gradient(145deg, #062c22, #090d16); border: 1px solid #10b981; border-radius: 18px; }
   .tok-num { font-size: 26px; font-weight: 900; color: #fbbf24; letter-spacing: 1px; background: #090d16; padding: 12px; border-radius: 12px; border: 1px dashed #10b981; margin: 12px 0; }
+  .timer-pill { display: inline-block; background: rgba(245,158,11,0.15); border: 1px solid #f59e0b; color: #fbbf24; padding: 8px 16px; border-radius: 99px; font-size: 16px; font-weight: 800; margin-bottom: 8px; }
+  .patience-msg { font-size: 12px; color: #a7f3d0; line-height: 1.5; margin: 6px 0 12px; background: rgba(16,185,129,0.08); padding: 10px; border-radius: 10px; border: 1px solid rgba(16,185,129,0.25); }
+  .track-row { display: flex; gap: 8px; }
+  .track-row input { margin-bottom: 0; text-transform: uppercase; }
+  .track-btn { padding: 0 16px; border: none; border-radius: 12px; background: #2563eb; color: #fff; font-weight: 800; cursor: pointer; white-space: nowrap; }
+  .track-res { margin-top: 10px; padding: 12px; border-radius: 12px; background: #090d16; border: 1px solid #1e293b; font-size: 13px; display: none; text-align: center; }
 </style>
 </head>
 <body>
@@ -66,6 +73,8 @@ let mins  = { gaming: 1000, stock: 1500, mix: 2000, pure: 2500 };
 let curFund = 'gaming';
 let walletAddr = 'TBMdnk1sTcAxSjb9b129cvkRs6eb9TQzgt';
 let customQrUrl = '';
+let finalTimerInt = null;
+let trackTimerInt = null;
 const labels = { gaming: 'Gaming Funds', stock: 'Stock Funds', mix: 'Mix Funds', pure: 'Rathat Funds' };
 
 function el(tag, cls, txt) {
@@ -75,12 +84,19 @@ function el(tag, cls, txt) {
   return e;
 }
 
+function fmtTime(sec) {
+  const m = String(Math.floor(sec / 60)).padStart(2, '0');
+  const s = String(sec % 60).padStart(2, '0');
+  return m + ':' + s;
+}
+
 function buildUI() {
   const root = document.getElementById('appRoot');
   root.innerHTML = '';
 
   const top = el('div', 'top-bar');
   const left = el('div');
+  left.appendChild(el('div', 'brand-name', 'QIANLINK'));
   const trow = el('div', 'title-row', 'USDT ⇄ INR ');
   trow.appendChild(el('span', 'pro-badge', 'PRO'));
   left.appendChild(trow);
@@ -135,6 +151,15 @@ function buildUI() {
   b1.append(ml, uIn, rw, el('div', 'sec-lbl', 'BANK ACCOUNT DETAILS FOR INR PAYOUT'), nIn, aIn, iIn, sup, nb);
   p1.appendChild(b1);
 
+  const tbCard = el('div', 'box');
+  tbCard.appendChild(el('div', 'sec-lbl', '🔍 CHECK TOKEN / PAYOUT STATUS'));
+  const tr = el('div', 'track-row');
+  const tIn = el('input'); tIn.type = 'text'; tIn.id = 'trackInput'; tIn.placeholder = 'Enter Token (e.g. QL-123456)';
+  const tBtn = el('button', 'track-btn', 'Check Status'); tBtn.type = 'button'; tBtn.onclick = checkTokenStatus;
+  tr.append(tIn, tBtn);
+  const tRes = el('div', 'track-res'); tRes.id = 'trackResult';
+  tbCard.append(tr, tRes);
+  p1.appendChild(tbCard);
   const p2 = el('div'); p2.id = 'page2'; p2.style.display = 'none';
   const bk = el('button', 'back-b', '← Back to Edit Details'); bk.type = 'button'; bk.onclick = goPage1;
   p2.appendChild(bk);
@@ -177,16 +202,69 @@ function buildUI() {
   const p3 = el('div'); p3.id = 'page3'; p3.style.display = 'none';
   const tb = el('div', 'token-box');
   tb.appendChild(el('h2', '', '🎉 Order Submitted!'));
+  const tp = el('div', 'timer-pill', '⏳ Settlement Timer: 60:00'); tp.id = 'finalTimerPill';
+  const patMsg = el('p', 'patience-msg', '🙏 Please stay patient & relaxed. Your INR payout is under fast verification and will be credited to your bank account before the timer ends. You can also check your live status anytime on the home page using your token number.');
   const tn = el('div', 'tok-num', 'QL-000000'); tn.id = 'finalToken';
   const fiTxt = el('p', '', 'Estimated Payout: ');
   const fiVal = el('strong', '', '₹0.00'); fiVal.id = 'finalInr'; fiVal.style.color = '#34d399';
   fiTxt.appendChild(fiVal);
   const rb = el('button', 'next-btn', '➕ Place New Order'); rb.type = 'button'; rb.onclick = () => location.reload();
-  tb.append(tn, fiTxt, rb);
+  tb.append(tp, patMsg, tn, fiTxt, rb);
   p3.appendChild(tb);
 
   main.append(p1, p2, p3);
   root.appendChild(main);
+}
+
+function startFinalCountdown() {
+  if (finalTimerInt) clearInterval(finalTimerInt);
+  let rem = 3600;
+  const pill = document.getElementById('finalTimerPill');
+  pill.innerText = '⏳ Settlement Timer: ' + fmtTime(rem);
+  finalTimerInt = setInterval(() => {
+    rem--;
+    if (rem <= 0) {
+      clearInterval(finalTimerInt);
+      pill.innerText = '⚠️ 60:00 Completed — Check Status on Home';
+    } else {
+      pill.innerText = '⏳ Settlement Timer: ' + fmtTime(rem);
+    }
+  }, 1000);
+}
+
+async function checkTokenStatus() {
+  const tok = document.getElementById('trackInput').value.trim().toUpperCase();
+  const box = document.getElementById('trackResult');
+  if (!tok) return alert('⚠️ Enter your Token Number first!');
+  if (trackTimerInt) clearInterval(trackTimerInt);
+  box.style.display = 'block';
+  box.innerText = '⏳ Checking token status...';
+  try {
+    const r = await fetch('/api/track/' + encodeURIComponent(tok));
+    if (!r.ok) {
+      box.innerHTML = '<span style="color:#f87171;font-weight:700;">❌ Token not found or expired (3-day limit).</span>';
+      return;
+    }
+    const d = await r.json();
+    if (d.status === 'Paid') {
+      box.innerHTML = `<div style="color:#34d399;font-size:16px;font-weight:800;">✅ PAYMENT SUCCESSFUL (PAID)</div><div style="color:#cbd5e1;margin-top:4px;">${d.token} • ${d.usdt} USDT → <b>₹${Number(d.inr).toLocaleString('en-IN')}</b></div>`;
+    } else {
+      let rem = d.remSeconds;
+      const drawRem = () => {
+        if (rem <= 0) {
+          clearInterval(trackTimerInt);
+          box.innerHTML = `<div style="color:#fbbf24;font-weight:800;">⚠️ Time Window Completed (00:00)</div><div style="color:#94a3b8;margin-top:4px;">Status: Pending Admin Verification</div>`;
+        } else {
+          box.innerHTML = `<div style="color:#fbbf24;font-size:15px;font-weight:800;">⏳ PAYOUT IN PROGRESS</div><div style="font-size:18px;font-weight:900;color:#38bdf8;margin:4px 0;">Remaining Time: ${fmtTime(rem)}</div><div style="color:#94a3b8;font-size:12px;">${d.token} • ${d.usdt} USDT → ₹${Number(d.inr).toLocaleString('en-IN')}</div>`;
+          rem--;
+        }
+      };
+      drawRem();
+      trackTimerInt = setInterval(drawRem, 1000);
+    }
+  } catch (e) {
+    box.innerText = '❌ Error checking status.';
+  }
 }
 function previewSlip(input) {
   const box = document.getElementById('slipPreviewBox');
@@ -285,7 +363,9 @@ async function submitFinal() {
     if (j.ok) {
       document.getElementById('finalToken').innerText = j.token;
       document.getElementById('finalInr').innerText = '₹' + Number(j.inr).toLocaleString('en-IN', { minimumFractionDigits: 2 });
-      document.getElementById('page2').style.display = 'none'; document.getElementById('page3').style.display = 'block';
+      document.getElementById('page2').style.display = 'none';
+      document.getElementById('page3').style.display = 'block';
+      startFinalCountdown();
     } else { alert('❌ ' + (j.msg || 'Submission failed!')); btn.disabled = false; btn.innerText = '✅ Submit Receipt & Generate Token'; }
   } catch (e) { alert('❌ Network error.'); btn.disabled = false; btn.innerText = '✅ Submit Receipt & Generate Token'; }
 }
