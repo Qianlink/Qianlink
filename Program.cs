@@ -11,6 +11,24 @@ app.UseStaticFiles();
 
 app.MapGet("/api/state", (DeskStore s) => Results.Ok(s.GetPublicState()));
 
+app.MapGet("/api/track/{token}", (DeskStore s, string token) =>
+{
+    var ord = s.GetOrderByToken(token.Trim().ToUpper());
+    if (ord == null) return Results.NotFound(new { ok = false });
+    var elapsedSec = (int)(DateTime.UtcNow - ord.CreatedUtc).TotalSeconds;
+    var remSec = Math.Max(0, 3600 - elapsedSec);
+    return Results.Ok(new
+    {
+        ok = true,
+        token = ord.Token,
+        fund = ord.Fund,
+        usdt = ord.Usdt,
+        inr = ord.Inr,
+        status = ord.Status,
+        remSeconds = remSec
+    });
+});
+
 app.MapPost("/api/admin/login", (DeskStore s, PassReq req) =>
     s.CheckPassword(req.Password) ? Results.Ok(new { ok = true }) : Results.Unauthorized());
 
@@ -192,7 +210,6 @@ public class DeskStore
     }
 
     public void UpdateSettings(AppSettings cfg) { lock (_lock) Settings = cfg; }
-
     public bool ValidateOrder(string fund, decimal usdt, string holder, string accNo, string ifsc)
     {
         lock (_lock)
@@ -239,6 +256,12 @@ public class DeskStore
             var x = _orders.FirstOrDefault(i => i.Token == token);
             if (x != null) x.Status = st;
         }
+    }
+
+    public OrderItem? GetOrderByToken(string token)
+    {
+        CleanupOldRecords();
+        lock (_lock) return _orders.FirstOrDefault(i => i.Token == token);
     }
 
     public async Task NotifyTelegramWithReceipt(OrderItem o, string filePath)
