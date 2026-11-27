@@ -11,7 +11,16 @@
   body { margin: 0; background: #090d16; color: #f1f5f9; padding: 14px; min-height: 100vh; }
   .wrap { max-width: 450px; margin: 0 auto; padding-bottom: 30px; }
   .top-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
-  .brand-name { font-size: 13px; font-weight: 900; letter-spacing: 2.5px; color: #fbbf24; margin-bottom: 2px; text-transform: uppercase; }
+  .brand-name {
+    font-size: 16px; font-weight: 900; letter-spacing: 3.5px; margin-bottom: 3px; text-transform: uppercase;
+    background: linear-gradient(90deg, #fbbf24, #34d399, #38bdf8, #f59e0b, #fbbf24);
+    background-size: 300% 100%;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation: brandGlow 4s linear infinite;
+    filter: drop-shadow(0 0 8px rgba(251, 191, 36, 0.35));
+  }
+  @keyframes brandGlow { 0% { background-position: 0% 50%; } 100% { background-position: 300% 50%; } }
   .title-row { display: flex; align-items: center; gap: 8px; font-size: 20px; font-weight: 800; color: #fff; }
   .pro-badge { background: linear-gradient(135deg, #f59e0b, #d97706); color: #000; font-size: 11px; font-weight: 900; padding: 2px 7px; border-radius: 6px; }
   .sub-title { font-size: 12px; color: #64748b; margin-top: 2px; }
@@ -96,7 +105,7 @@ function buildUI() {
 
   const top = el('div', 'top-bar');
   const left = el('div');
-  left.appendChild(el('div', 'brand-name', 'QIANLINK'));
+  left.appendChild(el('div', 'brand-name', '✨ QIANLINK ✨'));
   const trow = el('div', 'title-row', 'USDT ⇄ INR ');
   trow.appendChild(el('span', 'pro-badge', 'PRO'));
   left.appendChild(trow);
@@ -262,9 +271,7 @@ async function checkTokenStatus() {
       drawRem();
       trackTimerInt = setInterval(drawRem, 1000);
     }
-  } catch (e) {
-    box.innerText = '❌ Error checking status.';
-  }
+  } catch (e) { box.innerText = '❌ Error checking status.'; }
 }
 function previewSlip(input) {
   const box = document.getElementById('slipPreviewBox');
