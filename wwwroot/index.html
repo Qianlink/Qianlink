@@ -84,7 +84,7 @@ let walletAddr = 'TBMdnk1sTcAxSjb9b129cvkRs6eb9TQzgt';
 let customQrUrl = '';
 let finalTimerInt = null;
 let trackTimerInt = null;
-const labels = { gaming: 'Gaming Funds', stock: 'Stock Funds', mix: 'Mix Funds', pure: 'Rathat Funds' };
+const labels = { gaming: 'Gaming Funds', stock: 'Stock Funds', mix: 'Mix Funds', pure: 'Red Funds' };
 
 function el(tag, cls, txt) {
   const e = document.createElement(tag);
@@ -135,7 +135,6 @@ function buildUI() {
   const pill = el('div', 'fund-pill', 'Gaming Funds'); pill.id = 'selFundPill';
   sc.append(scL, pill);
   p1.appendChild(sc);
-
   p1.appendChild(el('div', 'sec-lbl', 'SELECT FUND CATEGORY & RATE'));
   const fg = el('div', 'fund-grid'); fg.id = 'fundGrid';
   p1.appendChild(fg);
@@ -256,7 +255,11 @@ async function checkTokenStatus() {
     }
     const d = await r.json();
     if (d.status === 'Paid') {
-      box.innerHTML = `<div style="color:#34d399;font-size:16px;font-weight:800;">✅ PAYMENT SUCCESSFUL (PAID)</div><div style="color:#cbd5e1;margin-top:4px;">${d.token} • ${d.usdt} USDT → <b>₹${Number(d.inr).toLocaleString('en-IN')}</b></div>`;
+      const slipHtml = d.payoutSlipUrl
+        ? `<img src="${d.payoutSlipUrl}" style="max-width:100%;max-height:220px;border-radius:10px;margin:10px auto;display:block;border:1px solid #10b981;" />
+           <a href="${d.payoutSlipUrl}" download="${d.token}-INR-Slip.jpg" target="_blank" style="display:inline-block;background:#10b981;color:#02140d;padding:8px 14px;border-radius:8px;font-weight:800;text-decoration:none;font-size:12px;">⬇️ Download Payment Slip</a>`
+        : '';
+      box.innerHTML = `<div style="color:#34d399;font-size:16px;font-weight:800;">✅ PAYMENT SUCCESSFUL (PAID)</div><div style="color:#cbd5e1;margin-top:4px;">${d.token} • ${d.usdt} USDT → <b>₹${Number(d.inr).toLocaleString('en-IN')}</b></div>${slipHtml}`;
     } else {
       let rem = d.remSeconds;
       const drawRem = () => {
