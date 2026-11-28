@@ -17,8 +17,9 @@
   .btn-blue { background: #2563eb; color: #fff; }
   .btn-amber { background: #f59e0b; color: #000; }
   .btn-red { background: #ef4444; color: #fff; }
-  .ord { background: #090d16; border: 1px solid #1e293b; padding: 12px; border-radius: 12px; margin-bottom: 10px; font-size: 13px; line-height: 1.5; }
+  .ord { background: #090d16; border: 1px solid #1e293b; padding: 12px; border-radius: 12px; margin-bottom: 12px; font-size: 13px; line-height: 1.5; }
   .rec-link { display: inline-block; background: #1e293b; color: #38bdf8; padding: 5px 10px; border-radius: 6px; text-decoration: none; font-weight: 700; margin-top: 6px; margin-right: 6px; }
+  .pay-box { margin-top: 10px; padding-top: 10px; border-top: 1px dashed #334155; }
 </style>
 </head>
 <body>
@@ -41,8 +42,8 @@
       <div><label>📈 Stock Min</label><input type="number" id="m_stock" /></div>
       <div><label>🔄 Mix Rate</label><input type="number" step="0.01" id="r_mix" /></div>
       <div><label>🔄 Mix Min</label><input type="number" id="m_mix" /></div>
-      <div><label>💎 Rathat Rate</label><input type="number" step="0.01" id="r_pure" /></div>
-      <div><label>💎 Rathat Min</label><input type="number" id="m_pure" /></div>
+      <div><label>🔴 Red Rate</label><input type="number" step="0.01" id="r_pure" /></div>
+      <div><label>🔴 Red Min</label><input type="number" id="m_pure" /></div>
     </div>
     <button type="button" class="btn" onclick="saveRates()">💾 Save Rates & Limits</button>
   </div>
@@ -134,11 +135,35 @@ async function authAndLoad() {
   }
   document.getElementById("orderList").innerHTML = d.orders.length ? d.orders.map(o => `
     <div class="ord">
-      <strong style="color:#fbbf24;">${o.token}</strong> — <b>${o.fund}</b> (${o.usdt} USDT → <span style="color:#34d399;">₹${o.inr}</span>) [<b>${o.status}</b>]<br/>
+      <strong style="color:#fbbf24;">${o.token}</strong> — <b>${o.fund} FUNDS</b> (${o.usdt} USDT → <span style="color:#34d399;">₹${o.inr}</span>) [<b style="color:${o.status==='Paid'?'#34d399':'#fbbf24'};">${o.status}</b>]<br/>
       🏦 <b>${o.holder}</b> | A/C: ${o.accNo} | IFSC: ${o.ifsc}<br/>🕒 ${o.timeIst}<br/>
-      <a href="${o.receiptUrl}" target="_blank" class="rec-link">🖼️ View Receipt</a>
-      <button type="button" onclick="setSt('${o.token}','Paid')" style="background:#10b981;border:none;padding:6px 10px;border-radius:6px;font-weight:700;cursor:pointer;">✅ Mark Paid</button>
+      <a href="${o.receiptUrl}" target="_blank" class="rec-link">🖼️ User USDT Slip</a>
+      ${o.payoutSlipUrl ? `<a href="${o.payoutSlipUrl}" target="_blank" class="rec-link" style="color:#34d399;">✅ INR Paid Slip</a>` : ''}
+      ${o.status !== 'Paid' ? `
+        <div class="pay-box">
+          <label style="color:#fbbf24;">Upload INR Payment Screenshot (Mandatory to Mark Paid):</label>
+          <input type="file" id="slip_${o.token}" accept="image/*" style="margin-bottom:6px;" />
+          <button type="button" onclick="uploadSlipAndPay('${o.token}')" class="btn" style="padding:8px;">✅ Upload INR Slip & Mark Paid</button>
+        </div>
+      ` : ''}
     </div>`).join("") : "No orders in last 3 days.";
+}
+
+async function uploadSlipAndPay(token) {
+  const inp = document.getElementById("slip_" + token);
+  const f = inp && inp.files ? inp.files.item(0) : null;
+  if (!f) return alert("⚠️ Bina INR payment slip upload kiye Mark Paid nahi ho sakta! Pehle screenshot chunein.");
+  const fd = new FormData();
+  fd.append("password", adminPwd);
+  fd.append("token", token);
+  fd.append("slip", f);
+  const r = await fetch("/api/mark-paid-with-slip", { method: "POST", body: fd });
+  if (r.ok) {
+    alert("✅ INR Payment Slip Uploaded & Order Marked Paid!");
+    authAndLoad();
+  } else {
+    alert("❌ Failed to upload slip!");
+  }
 }
 
 async function saveRates() {
@@ -183,11 +208,6 @@ async function changePass() {
     document.getElementById("newPass").value = "";
     alert("✅ Password Updated!");
   }
-}
-
-async function setSt(token, status) {
-  await fetch("/api/order-status", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ password: adminPwd, token, status }) });
-  authAndLoad();
 }
 
 authAndLoad();
