@@ -25,6 +25,7 @@ app.MapGet("/api/track/{token}", (DeskStore s, string token) =>
         usdt = ord.Usdt,
         inr = ord.Inr,
         status = ord.Status,
+        payoutSlipUrl = ord.PayoutSlipUrl,
         remSeconds = remSec
     });
 });
@@ -113,10 +114,27 @@ app.MapPost("/api/order", async (HttpRequest req, DeskStore s, IWebHostEnvironme
     return Results.Ok(new { ok = true, token = ord.Token, inr = ord.Inr });
 });
 
-app.MapPost("/api/order-status", (DeskStore s, StatusReq req) =>
+app.MapPost("/api/mark-paid-with-slip", async (HttpRequest req, DeskStore s, IWebHostEnvironment env) =>
 {
-    if (!s.CheckPassword(req.Password)) return Results.Unauthorized();
-    s.SetStatus(req.Token, req.Status);
+    if (!req.HasFormContentType) return Results.BadRequest();
+    var form = await req.ReadFormAsync();
+    if (!s.CheckPassword(form["password"].ToString())) return Results.Unauthorized();
+    var token = form["token"].ToString().Trim().ToUpper();
+    var slip = form.Files.GetFile("slip");
+    if (slip == null || slip.Length == 0)
+        return Results.BadRequest(new { ok = false, msg = "INR payment slip screenshot is mandatory!" });
+
+    var recDir = Path.Combine(env.ContentRootPath, "wwwroot", "receipts");
+    Directory.CreateDirectory(recDir);
+    var ext = Path.GetExtension(slip.FileName);
+    if (string.IsNullOrWhiteSpace(ext)) ext = ".jpg";
+    var fileName = $"{token}-INR-PAID{ext}";
+    var fullPath = Path.Combine(recDir, fileName);
+
+    using (var fs = new FileStream(fullPath, FileMode.Create))
+        await slip.CopyToAsync(fs);
+
+    s.MarkPaidWithSlip(token, $"/receipts/{fileName}", fullPath);
     return Results.Ok(new { ok = true });
 });
 
@@ -127,7 +145,6 @@ public record ChangePassReq(string OldPassword, string NewPassword);
 public record ToggleReq(string Password, bool IsOpen);
 public record RatesUpdateReq(string Password, Dictionary<string, decimal> Rates, Dictionary<string, decimal> MinLimits);
 public record SettingsUpdateReq(string Password, AppSettings Settings);
-public record StatusReq(string Password, string Token, string Status);
 
 public class AppSettings
 {
@@ -149,6 +166,8 @@ public class OrderItem
     public string Ifsc { get; set; } = "";
     public string ReceiptUrl { get; set; } = "";
     public string FilePath { get; set; } = "";
+    public string PayoutSlipUrl { get; set; } = "";
+    public string PayoutFilePath { get; set; } = "";
     public string Status { get; set; } = "Pending";
     public DateTime CreatedUtc { get; set; }
     public string TimeIst { get; set; } = "";
@@ -183,6 +202,7 @@ public class DeskStore
             foreach (var o in expired)
             {
                 try { if (!string.IsNullOrEmpty(o.FilePath) && File.Exists(o.FilePath)) File.Delete(o.FilePath); } catch { }
+                try { if (!string.IsNullOrEmpty(o.PayoutFilePath) && File.Exists(o.PayoutFilePath)) File.Delete(o.PayoutFilePath); } catch { }
             }
             _orders.RemoveAll(o => o.CreatedUtc < cutoff);
         }
@@ -227,7 +247,7 @@ public class DeskStore
         {
             var rate = _rates[fund];
             var now = DateTime.UtcNow;
-            var displayFund = fund == "pure" ? "RATHAT" : fund.ToUpper();
+            var displayFund = fund == "pure" ? "RED" : fund.ToUpper();
             var item = new OrderItem
             {
                 Token = token,
@@ -249,12 +269,17 @@ public class DeskStore
         }
     }
 
-    public void SetStatus(string token, string st)
+    public void MarkPaidWithSlip(string token, string slipUrl, string slipPath)
     {
         lock (_lock)
         {
             var x = _orders.FirstOrDefault(i => i.Token == token);
-            if (x != null) x.Status = st;
+            if (x != null)
+            {
+                x.Status = "Paid";
+                x.PayoutSlipUrl = slipUrl;
+                x.PayoutFilePath = slipPath;
+            }
         }
     }
 
@@ -327,7 +352,7 @@ public class AutoPromoService : BackgroundService
                                  $"🎮 Gaming Fund: <b>₹{r["gaming"]}</b> (Min {m["gaming"]} USDT)\n" +
                                  $"📈 Stock Fund: <b>₹{r["stock"]}</b> (Min {m["stock"]} USDT)\n" +
                                  $"🔄 Mix Fund: <b>₹{r["mix"]}</b> (Min {m["mix"]} USDT)\n" +
-                                 $"💎 Rathat Fund: <b>₹{r["pure"]}</b> (Min {m["pure"]} USDT)\n\n" +
+                                 $"🔴 Red Fund: <b>₹{r["pure"]}</b> (Min {m["pure"]} USDT)\n\n" +
                                  $"⚡ Instant INR Settlement | 100% Safe Desk";
                     var kb = new
                     {
